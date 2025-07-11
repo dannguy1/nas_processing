@@ -19,7 +19,6 @@ import os
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-import pdfkit
 import warnings
 
 logger = logging.getLogger(__name__)
@@ -738,8 +737,7 @@ class OutputFormatter:
             'csv': self._format_csv,
             'json': self._format_json,
             'excel': self._format_excel,
-            'html': self._format_html,
-            'pdf': self._format_pdf
+            'html': self._format_html
         }
     
     def format_output(self, data: pd.DataFrame, format_type: str, output_path: str, 
@@ -1133,107 +1131,6 @@ class OutputFormatter:
             f.write(html_content)
         
         return output_path
-    
-    def _format_pdf(self, data: pd.DataFrame, output_path: str, 
-                    additional_data: Optional[Dict] = None) -> str:
-        """Format data as PDF report"""
-        try:
-            # Create HTML content first
-            html_content = self._create_pdf_html(data, additional_data)
-            
-            # Convert HTML to PDF
-            options = {
-                'page-size': 'A4',
-                'margin-top': '0.75in',
-                'margin-right': '0.75in',
-                'margin-bottom': '0.75in',
-                'margin-left': '0.75in',
-                'encoding': "UTF-8",
-            }
-            
-            pdfkit.from_string(html_content, output_path, options=options)
-            return output_path
-            
-        except ImportError:
-            logger.warning("pdfkit not available, falling back to HTML")
-            return self._format_html(data, output_path.replace('.pdf', '.html'), additional_data)
-        except Exception as e:
-            logger.warning(f"PDF generation failed: {e}, falling back to HTML")
-            return self._format_html(data, output_path.replace('.pdf', '.html'), additional_data)
-    
-    def _create_pdf_html(self, data: pd.DataFrame, additional_data: Optional[Dict] = None) -> str:
-        """Create HTML content for PDF conversion"""
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>NAS Log Analysis Report</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                .header {{ background-color: #f0f0f0; padding: 20px; border-radius: 5px; }}
-                .section {{ margin: 20px 0; }}
-                .metric {{ display: inline-block; margin: 10px; padding: 10px; background-color: #e8f4fd; border-radius: 5px; }}
-                table {{ border-collapse: collapse; width: 100%; margin: 10px 0; }}
-                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                th {{ background-color: #f2f2f2; }}
-                .failure {{ color: #d62728; }}
-                .success {{ color: #2ca02c; }}
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>NAS Log Analysis Report</h1>
-                <p>Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-                <p>Total Messages: {len(data)}</p>
-            </div>
-        """
-        
-        # Add analysis results if available
-        if additional_data:
-            if 'summary' in additional_data:
-                summary = additional_data['summary']
-                html_content += f"""
-                <div class="section">
-                    <h2>Analysis Summary</h2>
-                    <div class="metric">Health Score: {summary.get('health_score', 'N/A')}%</div>
-                    <div class="metric">Severity: {summary.get('severity_level', 'N/A')}</div>
-                    <div class="metric">Failure Rate: {summary.get('failure_rate', 'N/A')}%</div>
-                    <div class="metric">Total Sessions: {summary.get('total_sessions', 'N/A')}</div>
-                </div>
-                """
-            
-            if 'failures' in additional_data:
-                failures = additional_data['failures']
-                if failures['failure_messages']:
-                    html_content += f"""
-                    <div class="section">
-                        <h2>Failure Analysis</h2>
-                        <p class="failure">Total Failures: {len(failures['failure_messages'])}</p>
-                        <h3>Failure Types:</h3>
-                        <ul>
-                    """
-                    for failure_type, count in failures['failure_types'].items():
-                        html_content += f"<li>{failure_type}: {count}</li>"
-                    html_content += "</ul>"
-                    
-                    if failures['recommendations']:
-                        html_content += "<h3>Recommendations:</h3><ul>"
-                        for rec in failures['recommendations']:
-                            html_content += f"<li>{rec}</li>"
-                        html_content += "</ul>"
-                    html_content += "</div>"
-        
-        # Add data table
-        html_content += f"""
-            <div class="section">
-                <h2>Message Data</h2>
-                {data.fillna('').to_html(classes='data-table', index=False)}
-            </div>
-        </body>
-        </html>
-        """
-        
-        return html_content
 
     def _format_analysis_sections(self, additional_data: Dict) -> str:
         """Format analysis data into organized HTML sections"""
