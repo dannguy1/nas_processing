@@ -1,0 +1,338 @@
+# Field Mappings Template
+# Copy this file and modify the patterns to match your specific log format
+# Place your custom config in the root directory or specify with -c flag
+
+# Required fields - these must be present in your logs
+timestamp:
+  patterns:
+    - '^(\d{4} \w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\.\d{3})'  # Standard QxDM format
+    - '^(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3})'  # Alternative format
+    - '^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})'  # ISO format
+  validation:
+    required: true
+    format: "datetime"
+  description: "Message timestamp"
+
+direction:
+  patterns:
+    - 'LTE NAS.*(?:Plain )?OTA.*(Incoming|Outgoing).*Message.*--'  # Standard format
+    - 'LTE NAS.*Security Protected.*(Incoming|Outgoing).*Msg'  # Security protected format
+    - 'NAS.*(Incoming|Outgoing).*Message'  # Simplified format
+    - '(Incoming|Outgoing).*Message'  # Minimal format
+  validation:
+    required: true
+    allowed_values: ["Incoming", "Outgoing"]
+  description: "Message direction (UE-to-Network or Network-to-UE)"
+
+message_type:
+  patterns:
+    - 'LTE NAS.*(?:Plain )?OTA.*(Incoming|Outgoing).*Message.*--\s*(.+?)(?:\s+Msg)?$'  # Standard format
+    - 'LTE NAS.*Security Protected.*(Incoming|Outgoing).*Msg'  # Security protected format
+    - 'NAS.*(Incoming|Outgoing).*Message.*--\s*(.+?)(?:\s+Msg)?$'  # Simplified format
+    - '(Incoming|Outgoing).*Message.*--\s*(.+?)(?:\s+Msg)?$'  # Minimal format
+  validation:
+    required: true
+  description: "Type of NAS message"
+
+# Optional fields - these may or may not be present in your logs
+bearer_id:
+  patterns:
+    - 'Bearer ID = (\d+)'
+    - 'bearer_id = (\d+)'
+    - 'BearerID = (\d+)'
+    - 'Bearer ID = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "EPS Bearer ID"
+
+apn:
+  patterns:
+    - 'acc_pt_name_val\[\d+\] = \d+ \(.+\) \((.+)\)'
+    - 'APN = (.+)'
+    - 'apn = (.+)'
+    - 'access_point_name.*?acc_pt_name_val\[\d+\] = \d+ \(.+\) \((.+)\)'
+  validation:
+    required: false
+    min_length: 1
+  description: "Access Point Name"
+
+ipv4:
+  patterns:
+    - 'ipv4_addr = \d+ \(0x[0-9a-fA-F]+\) \(([ 0-9\.]+)\)'
+    - 'IP = (.+)'
+    - 'ipv4 = (.+)'
+    - 'ipv4_addr = (\d+) \(0x[0-9a-fA-F]+\) \(([ 0-9\.]+)\)'
+  validation:
+    required: false
+    format: "ipv4"
+  description: "IPv4 address"
+
+qci:
+  patterns:
+    - 'qci = (\d+)'
+    - 'QCI = (\d+)'
+    - 'qos_class = (\d+)'
+    - 'qci = (\d+) \(0x[0-9a-fA-F]+\) \(QC\d+\)'
+  validation:
+    required: false
+    data_type: "integer"
+    range: [1, 9]
+  description: "QoS Class Identifier"
+
+mcc:
+  patterns:
+    - 'mcc_1 = (\d+).*mcc_2 = (\d+).*mcc_3 = (\d+)'
+    - 'MCC = (\d{3})'
+    - 'mcc = (\d{3})'
+    - 'MCC digit 1 = (\d+).*MCC digit 2 = (\d+).*MCC digit 3 = (\d+)'
+  validation:
+    required: false
+    data_type: "string"
+    length: 3
+  description: "Mobile Country Code"
+
+mnc:
+  patterns:
+    - 'mnc_1 = (\d+).*mnc_2 = (\d+).*mnc_3 = (\d+)'
+    - 'MNC = (\d{2,3})'
+    - 'mnc = (\d{2,3})'
+    - 'MNC digit 1 = (\d+).*MNC digit 2 = (\d+).*MNC digit 3 = (\d+)'
+  validation:
+    required: false
+    data_type: "string"
+    length: 3
+  description: "Mobile Network Code"
+
+guti:
+  patterns:
+    - 'id_type = \d+.*GUTI'
+    - 'GUTI = (.+)'
+    - 'guti = (.+)'
+    - 'Guti valid = True'
+  validation:
+    required: false
+    allowed_values: ["yes", ""]
+  description: "Globally Unique Temporary Identifier"
+
+mme_group_id:
+  patterns:
+    - 'MME_group_id = (\d+) \(0x[0-9a-fA-F]+\)'
+    - 'MME_GROUP_ID = (\d+)'
+    - 'mme_group = (\d+)'
+    - 'MME Group Id = \{ (\d+), (\d+) \}'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "MME Group ID"
+
+mme_code:
+  patterns:
+    - 'MME_code = (\d+) \(0x[0-9a-fA-F]+\)'
+    - 'MME_CODE = (\d+)'
+    - 'mme_code = (\d+)'
+    - 'MME Code = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "MME Code"
+
+tmsi:
+  patterns:
+    - 'm_tmsi = (\d+) \(0x[0-9a-fA-F]+\)'
+    - 'TMSI = (\d+)'
+    - 'tmsi = (\d+)'
+    - 'M TMSI = (\d+) \(0x[0-9a-fA-F]+\)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Temporary Mobile Subscriber Identity"
+
+nas_key_set_id:
+  patterns:
+    - 'nas_key_set_id = (\d+)'
+    - 'NAS_KEY_SET = (\d+)'
+    - 'key_set = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "NAS Key Set Identifier"
+
+att_type:
+  patterns:
+    - 'att_type = (\d+).*?\((.*?)\)'
+    - 'ATTACH_TYPE = (\d+)'
+    - 'attach_type = (\d+)'
+  validation:
+    required: false
+  description: "Attach Type"
+
+tsc:
+  patterns:
+    - 'tsc = (\d+)'
+    - 'TSC = (\d+)'
+    - 'security_context = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Type of Security Context"
+
+eea:
+  patterns:
+    - '(EEA\d+(_128)?) = (\d+)'
+    - 'EEA(\d+) = (\d+)'
+    - 'encryption_algo = (.+)'
+  validation:
+    required: false
+  description: "EPS Encryption Algorithms"
+
+eia:
+  patterns:
+    - '(EIA\d+(_128)?) = (\d+)'
+    - 'EIA(\d+) = (\d+)'
+    - 'integrity_algo = (.+)'
+  validation:
+    required: false
+  description: "EPS Integrity Algorithms"
+
+uea:
+  patterns:
+    - '(UEA\d+) = (\d+)'
+    - 'UEA(\d+) = (\d+)'
+    - 'umts_algo = (.+)'
+  validation:
+    required: false
+  description: "UMTS Encryption Algorithms"
+
+# New fields for enhanced analysis
+emm_state:
+  patterns:
+    - 'EMM state = (.+)'
+    - 'emm_state = (.+)'
+  validation:
+    required: false
+  description: "EMM State"
+
+emm_sub_state:
+  patterns:
+    - 'EMM sub-state = (.+)'
+    - 'emm_sub_state = (.+)'
+  validation:
+    required: false
+  description: "EMM Sub-state"
+
+bearer_state:
+  patterns:
+    - 'Bearer State = (.+)'
+    - 'bearer_state = (.+)'
+  validation:
+    required: false
+  description: "Bearer State"
+
+procedure_state:
+  patterns:
+    - 'Procedure State = (.+)'
+    - 'procedure_state = (.+)'
+  validation:
+    required: false
+  description: "Procedure State"
+
+pti:
+  patterns:
+    - 'PTI = (\d+)'
+    - 'pti = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Procedure Transaction Identity"
+
+sdf_id:
+  patterns:
+    - 'SDF ID = (\d+)'
+    - 'sdf_id = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Service Data Flow ID"
+
+connection_id:
+  patterns:
+    - 'Connection ID = (\d+)'
+    - 'connection_id = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Connection ID"
+
+rb_id:
+  patterns:
+    - 'RB ID = (\d+)'
+    - 'rb_id = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Radio Bearer ID"
+
+apn_ambr_dl:
+  patterns:
+    - 'apn_ambr_dl = (\d+) \(0x[0-9a-fA-F]+\) \(([^)]+)\)'
+    - 'APN_AMBR_DL = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "APN Aggregate Maximum Bit Rate Downlink"
+
+apn_ambr_ul:
+  patterns:
+    - 'apn_ambr_ul = (\d+) \(0x[0-9a-fA-F]+\) \(([^)]+)\)'
+    - 'APN_AMBR_UL = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "APN Aggregate Maximum Bit Rate Uplink"
+
+pdn_type:
+  patterns:
+    - 'pdn_type = (\d+).*?\(([^)]+)\)'
+    - 'PDN_TYPE = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "PDN Type"
+
+req_type:
+  patterns:
+    - 'req_type = (\d+).*?\(([^)]+)\)'
+    - 'REQ_TYPE = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Request Type"
+
+trans_id:
+  patterns:
+    - 'Trans Id = (\d+)'
+    - 'trans_id = (\d+)'
+    - 'transaction_id = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Transaction ID"
+
+version:
+  patterns:
+    - 'Version = (\d+)'
+    - 'version = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Message Version"
+
+subscription_id:
+  patterns:
+    - 'Subscription ID = (\d+)'
+    - 'subscription_id = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Subscription ID" 

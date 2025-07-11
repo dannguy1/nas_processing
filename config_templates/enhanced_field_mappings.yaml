@@ -1,0 +1,443 @@
+# Enhanced Field Mappings for NAS Log Processing
+# This configuration includes improved patterns for better field extraction
+
+# Required fields - these must be present in your logs
+timestamp:
+  patterns:
+    - '^(\d{4} \w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\.\d{3})'  # Standard QxDM format
+    - '^(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2}\.\d{3})'  # Alternative format
+    - '^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})'  # ISO format
+  validation:
+    required: true
+    format: "datetime"
+  description: "Message timestamp"
+
+direction:
+  patterns:
+    - 'LTE NAS.*(?:Plain )?OTA.*(Incoming|Outgoing).*Message.*--'  # Standard format
+    - 'LTE NAS.*Security Protected.*(Incoming|Outgoing).*Msg'  # Security protected format
+    - 'NAS.*(Incoming|Outgoing).*Message'  # Simplified format
+    - '(Incoming|Outgoing).*Message'  # Minimal format
+    - 'LTE NAS EMM State'  # State messages
+    - 'LTE NAS ESM Bearer Context State'  # State messages
+  validation:
+    required: true
+    allowed_values: ["Incoming", "Outgoing", "State"]
+  description: "Message direction (UE-to-Network or Network-to-UE)"
+
+message_type:
+  patterns:
+    - 'LTE NAS.*(?:Plain )?OTA.*(Incoming|Outgoing).*Message.*--\s*(.+?)(?:\s+Msg)?$'  # Standard format
+    - 'LTE NAS.*Security Protected.*(Incoming|Outgoing).*Msg'  # Security protected format
+    - 'NAS.*(Incoming|Outgoing).*Message.*--\s*(.+?)(?:\s+Msg)?$'  # Simplified format
+    - '(Incoming|Outgoing).*Message.*--\s*(.+?)(?:\s+Msg)?$'  # Minimal format
+    - 'LTE NAS EMM State.*--\s*(.+?)(?:\s+Msg)?$'  # EMM State messages
+    - 'LTE NAS ESM Bearer Context State.*--\s*(.+?)(?:\s+Msg)?$'  # ESM State messages
+  validation:
+    required: true
+  description: "Type of NAS message"
+
+# Enhanced Bearer and Context Information
+bearer_id:
+  patterns:
+    - 'Bearer ID = (\d+)'
+    - 'bearer_id = (\d+)'
+    - 'BearerID = (\d+)'
+    - 'EPS bearer id = (\d+)'
+    - 'Bearer Context ID = (\d+)'
+    - 'Linked EPS bearer identity = (\d+)'
+    - 'Default EPS bearer identity = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "EPS Bearer ID"
+
+connection_id:
+  patterns:
+    - 'Connection ID = (\d+)'
+    - 'connection_id = (\d+)'
+    - 'Conn ID = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Connection ID"
+
+rb_id:
+  patterns:
+    - 'RB ID = (\d+)'
+    - 'rb_id = (\d+)'
+    - 'Radio Bearer ID = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Radio Bearer ID"
+
+sdf_id:
+  patterns:
+    - 'SDF ID = (\d+)'
+    - 'sdf_id = (\d+)'
+    - 'Service Data Flow ID = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Service Data Flow ID"
+
+# Enhanced APN and Network Information
+apn:
+  patterns:
+    - 'acc_pt_name_val\[\d+\] = \d+ \(.+\) \((.+)\)'
+    - 'APN = (.+)'
+    - 'apn = (.+)'
+    - 'access_point_name.*?acc_pt_name_val\[\d+\] = \d+ \(.+\) \((.+)\)'
+    - 'Access Point Name = (.+)'
+    - 'APN Name = (.+)'
+    - 'Network Access Identifier = (.+)'
+  validation:
+    required: false
+    min_length: 1
+  description: "Access Point Name"
+
+apn_ambr_dl:
+  patterns:
+    - 'APN-AMBR DL = (\d+)'
+    - 'apn_ambr_dl = (\d+)'
+    - 'APN Aggregate Maximum Bit Rate DL = (\d+)'
+    - 'DL bitrate = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "APN Aggregate Maximum Bit Rate Downlink"
+
+apn_ambr_ul:
+  patterns:
+    - 'APN-AMBR UL = (\d+)'
+    - 'apn_ambr_ul = (\d+)'
+    - 'APN Aggregate Maximum Bit Rate UL = (\d+)'
+    - 'UL bitrate = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "APN Aggregate Maximum Bit Rate Uplink"
+
+pdn_type:
+  patterns:
+    - 'PDN type = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'pdn_type = (\d+)'
+    - 'PDN Type = (\d+)'
+    - 'Packet Data Network Type = (.+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "Packet Data Network Type"
+
+req_type:
+  patterns:
+    - 'Request type = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'req_type = (\d+)'
+    - 'Request Type = (\d+)'
+    - 'Initial Request Type = (.+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "Request Type"
+
+# Enhanced IP and QoS Information
+ipv4:
+  patterns:
+    - 'ipv4_addr = \d+ \(0x[0-9a-fA-F]+\) \(([ 0-9\.]+)\)'
+    - 'IP = (.+)'
+    - 'ipv4 = (.+)'
+    - 'ipv4_addr = (\d+) \(0x[0-9a-fA-F]+\) \(([ 0-9\.]+)\)'
+    - 'IPv4 Address = (.+)'
+    - 'UE IP Address = (.+)'
+  validation:
+    required: false
+    format: "ipv4"
+  description: "IPv4 address"
+
+ipv6:
+  patterns:
+    - 'ipv6_addr = (.+)'
+    - 'IPv6 Address = (.+)'
+    - 'IPv6 = (.+)'
+  validation:
+    required: false
+    format: "ipv6"
+  description: "IPv6 address"
+
+qci:
+  patterns:
+    - 'qci = (\d+)'
+    - 'QCI = (\d+)'
+    - 'qos_class = (\d+)'
+    - 'qci = (\d+) \(0x[0-9a-fA-F]+\) \(QC\d+\)'
+    - 'QoS Class Identifier = (\d+)'
+    - 'QCI value = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+    range: [1, 9]
+  description: "QoS Class Identifier"
+
+arp:
+  patterns:
+    - 'arp = (\d+)'
+    - 'ARP = (\d+)'
+    - 'Allocation and Retention Priority = (\d+)'
+    - 'Priority level = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Allocation and Retention Priority"
+
+# Enhanced Security Parameters
+nas_key_set_id:
+  patterns:
+    - 'nas_key_set_id = (\d+)'
+    - 'NAS_KEY_SET = (\d+)'
+    - 'key_set = (\d+)'
+    - 'NAS Key Set ID = (\d+)'
+    - 'Key Set Identifier = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "NAS Key Set Identifier"
+
+eea:
+  patterns:
+    - '(EEA\d+(_128)?) = (\d+)'
+    - 'EEA(\d+) = (\d+)'
+    - 'encryption_algo = (.+)'
+    - 'EPS Encryption Algorithm = (.+)'
+    - 'EEA0 = (\d+)'
+    - 'EEA1 = (\d+)'
+    - 'EEA2 = (\d+)'
+    - 'EEA3 = (\d+)'
+  validation:
+    required: false
+  description: "EPS Encryption Algorithms"
+
+eia:
+  patterns:
+    - '(EIA\d+(_128)?) = (\d+)'
+    - 'EIA(\d+) = (\d+)'
+    - 'integrity_algo = (.+)'
+    - 'EPS Integrity Algorithm = (.+)'
+    - 'EIA0 = (\d+)'
+    - 'EIA1 = (\d+)'
+    - 'EIA2 = (\d+)'
+    - 'EIA3 = (\d+)'
+  validation:
+    required: false
+  description: "EPS Integrity Algorithms"
+
+uea:
+  patterns:
+    - '(UEA\d+) = (\d+)'
+    - 'UEA(\d+) = (\d+)'
+    - 'umts_algo = (.+)'
+    - 'UMTS Encryption Algorithm = (.+)'
+    - 'UEA0 = (\d+)'
+    - 'UEA1 = (\d+)'
+  validation:
+    required: false
+  description: "UMTS Encryption Algorithms"
+
+uia:
+  patterns:
+    - '(UIA\d+) = (\d+)'
+    - 'UIA(\d+) = (\d+)'
+    - 'UMTS Integrity Algorithm = (.+)'
+    - 'UIA0 = (\d+)'
+    - 'UIA1 = (\d+)'
+  validation:
+    required: false
+  description: "UMTS Integrity Algorithms"
+
+# Enhanced Network Identification
+mcc:
+  patterns:
+    - 'mcc_1 = (\d+).*mcc_2 = (\d+).*mcc_3 = (\d+)'
+    - 'MCC = (\d{3})'
+    - 'mcc = (\d{3})'
+    - 'MCC digit 1 = (\d+).*MCC digit 2 = (\d+).*MCC digit 3 = (\d+)'
+    - 'Mobile Country Code = (\d{3})'
+  validation:
+    required: false
+    data_type: "string"
+    length: 3
+  description: "Mobile Country Code"
+
+mnc:
+  patterns:
+    - 'mnc_1 = (\d+).*mnc_2 = (\d+).*mnc_3 = (\d+)'
+    - 'MNC = (\d{2,3})'
+    - 'mnc = (\d{2,3})'
+    - 'MNC digit 1 = (\d+).*MNC digit 2 = (\d+).*MNC digit 3 = (\d+)'
+    - 'Mobile Network Code = (\d{2,3})'
+  validation:
+    required: false
+    data_type: "string"
+    length: 3
+  description: "Mobile Network Code"
+
+guti:
+  patterns:
+    - 'id_type = \d+.*GUTI'
+    - 'GUTI = (.+)'
+    - 'guti = (.+)'
+    - 'Guti valid = True'
+    - 'Globally Unique Temporary Identity = (.+)'
+    - 'GUTI value = (.+)'
+  validation:
+    required: false
+    allowed_values: ["yes", ""]
+  description: "Globally Unique Temporary Identifier"
+
+mme_group_id:
+  patterns:
+    - 'MME_group_id = (\d+) \(0x[0-9a-fA-F]+\)'
+    - 'MME_GROUP_ID = (\d+)'
+    - 'mme_group = (\d+)'
+    - 'MME Group Id = \{ (\d+), (\d+) \}'
+    - 'MME Group ID = (\d+)'
+    - 'MME Group Identifier = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "MME Group ID"
+
+mme_code:
+  patterns:
+    - 'MME_code = (\d+) \(0x[0-9a-fA-F]+\)'
+    - 'MME_CODE = (\d+)'
+    - 'mme_code = (\d+)'
+    - 'MME Code = (\d+)'
+    - 'MME Code Identifier = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "MME Code"
+
+tmsi:
+  patterns:
+    - 'm_tmsi = (\d+) \(0x[0-9a-fA-F]+\)'
+    - 'TMSI = (\d+)'
+    - 'tmsi = (\d+)'
+    - 'M TMSI = (\d+) \(0x[0-9a-fA-F]+\)'
+    - 'Temporary Mobile Subscriber Identity = (\d+)'
+    - 'M-TMSI = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Temporary Mobile Subscriber Identity"
+
+# Enhanced Attach and Security Context Information
+att_type:
+  patterns:
+    - 'att_type = (\d+).*?\((.*?)\)'
+    - 'ATTACH_TYPE = (\d+)'
+    - 'attach_type = (\d+)'
+    - 'Attach Type = (\d+)'
+    - 'Attachment Type = (.+)'
+  validation:
+    required: false
+  description: "Attach Type"
+
+tsc:
+  patterns:
+    - 'tsc = (\d+)'
+    - 'TSC = (\d+)'
+    - 'security_context = (\d+)'
+    - 'Type of Security Context = (\d+)'
+    - 'Security Context Type = (.+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Type of Security Context"
+
+# Enhanced State Information
+emm_state:
+  patterns:
+    - 'EMM state = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'emm_state = (\d+)'
+    - 'EMM State = (.+)'
+    - 'EMM State Value = (\d+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "EMM State"
+
+esm_state:
+  patterns:
+    - 'ESM state = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'esm_state = (\d+)'
+    - 'ESM State = (.+)'
+    - 'ESM State Value = (\d+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "ESM State"
+
+# Enhanced Error and Cause Information
+cause_code:
+  patterns:
+    - 'cause = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'cause_code = (\d+)'
+    - 'Cause Code = (\d+)'
+    - 'Reject Cause = (\d+)'
+    - 'Failure Cause = (.+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Cause Code"
+
+reject_cause:
+  patterns:
+    - 'reject_cause = (\d+)'
+    - 'Reject Cause = (\d+)'
+    - 'Rejection Cause = (.+)'
+    - 'Failure Reason = (.+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "Reject Cause"
+
+# Enhanced Protocol Information
+protocol_discriminator:
+  patterns:
+    - 'protocol_discriminator = (\d+)'
+    - 'Protocol Discriminator = (\d+)'
+    - 'PD = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Protocol Discriminator"
+
+security_header_type:
+  patterns:
+    - 'security_header_type = (\d+)'
+    - 'Security Header Type = (\d+)'
+    - 'SHT = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Security Header Type"
+
+# Enhanced Message Content
+message_text:
+  patterns:
+    - 'Message content = (.+)'
+    - 'NAS message = (.+)'
+    - 'Message payload = (.+)'
+  validation:
+    required: false
+  description: "Full message text content"
+
+# Enhanced Multi-line Field Support
+multi_line_fields:
+  - bearer_context
+  - security_context
+  - apn_configuration
+  - qos_parameters
+  - network_parameters 

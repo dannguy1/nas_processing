@@ -1,0 +1,78 @@
+# Procedure mappings for NAS message types
+procedures:
+  Attach:
+    messages: 
+      - "Attach request"
+      - "Attach accept"
+      - "Attach complete"
+      - "Attach reject"
+    sequence: ["request", "accept", "complete"]
+    timeout: 30  # seconds
+    description: "UE attachment to the network"
+
+  Detach:
+    messages:
+      - "Detach request"
+      - "Detach accept"
+    sequence: ["request", "accept"]
+    timeout: 15
+    description: "UE detachment from the network"
+
+  Service Request:
+    messages:
+      - "Service request"
+      - "Service accept"
+      - "Service reject"
+    sequence: ["request", "accept"]
+    timeout: 10
+    description: "Service request procedure"
+
+  TAU:
+    messages:
+      - "Tracking area update request"
+      - "Tracking area update accept"
+      - "Tracking area update reject"
+    sequence: ["request", "accept"]
+    timeout: 20
+    description: "Tracking Area Update procedure"
+
+  Bearer Management:
+    messages:
+      - "Activate default EPS bearer context request"
+      - "Activate default EPS bearer context accept"
+      - "Activate default EPS bearer context reject"
+      - "Modify EPS bearer context request"
+      - "Modify EPS bearer context accept"
+      - "Modify EPS bearer context reject"
+      - "Deactivate EPS bearer context request"
+      - "Deactivate EPS bearer context accept"
+    sequence: ["request", "accept"]
+    timeout: 15
+    description: "EPS Bearer management procedures"
+
+  PDN Connectivity:
+    messages:
+      - "PDN connectivity request"
+      - "PDN connectivity reject"
+      - "PDN disconnect request"
+      - "PDN disconnect accept"
+    sequence: ["request", "accept"]
+    timeout: 20
+    description: "PDN connectivity procedures"
+
+  Security:
+    messages:
+      - "Authentication request"
+      - "Authentication response"
+      - "Security mode command"
+      - "Security mode complete"
+      - "Security mode reject"
+    sequence: ["request", "response"]
+    timeout: 10
+    description: "Security procedures"
+
+  Other:
+    messages: []  # Catch-all for unmapped messages
+    sequence: []
+    timeout: 0
+    description: "Other NAS procedures" 

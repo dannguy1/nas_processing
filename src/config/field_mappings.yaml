@@ -1,0 +1,155 @@
+# Field extraction patterns and validation rules
+timestamp:
+  patterns:
+    - '^(\d{4} \w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}\.\d{3})'
+  validation:
+    required: true
+    format: "datetime"
+  description: "Message timestamp"
+
+direction:
+  patterns:
+    - 'LTE NAS.*Plain OTA.*(Incoming|Outgoing).*Message.*--'
+    - 'LTE NAS.*State'
+    - 'LTE NAS.*Bearer Context.*State'
+  validation:
+    required: true
+    allowed_values: ["Incoming", "Outgoing", "State"]
+  description: "Message direction (UE-to-Network, Network-to-UE, or State)"
+
+message_type:
+  patterns:
+    - 'LTE NAS.*(?:Plain )?OTA.*(Incoming|Outgoing).*Message.*--\s*(.+?)(?:\s+Msg)?$'
+    - 'LTE NAS.*State.*--\s*(.+?)(?:\s+Msg)?$'
+    - 'LTE NAS.*Bearer Context.*State.*--\s*(.+?)(?:\s+Msg)?$'
+    - 'LTE NAS.*Bearer Context.*Info.*--\s*(.+?)(?:\s+Msg)?$'
+  validation:
+    required: true
+  description: "Type of NAS message"
+
+bearer_id:
+  patterns:
+    - 'Bearer ID = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "EPS Bearer ID"
+
+apn:
+  patterns:
+    - 'acc_pt_name_val\\[\\d+\\] = \\d+ \\(.+\\) \\((.+)\\)'
+  validation:
+    required: false
+    min_length: 1
+  description: "Access Point Name"
+
+ipv4:
+  patterns:
+    - 'ipv4_addr = \\d+ \\(0x[0-9a-fA-F]+\\) \\(([ 0-9\\.]+)\\)'
+  validation:
+    required: false
+    format: "ipv4"
+  description: "IPv4 address"
+
+qci:
+  patterns:
+    - 'qci = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+    range: [1, 9]
+  description: "QoS Class Identifier"
+
+mcc:
+  patterns:
+    - 'mcc_1 = (\\d+).*mcc_2 = (\\d+).*mcc_3 = (\\d+)'
+  validation:
+    required: false
+    data_type: "string"
+    length: 3
+  description: "Mobile Country Code"
+
+mnc:
+  patterns:
+    - 'mnc_1 = (\\d+).*mnc_2 = (\\d+).*mnc_3 = (\\d+)'
+  validation:
+    required: false
+    data_type: "string"
+    length: 3
+  description: "Mobile Network Code"
+
+guti:
+  patterns:
+    - 'id_type = \\d+.*GUTI'
+  validation:
+    required: false
+    allowed_values: ["yes", ""]
+  description: "Globally Unique Temporary Identifier"
+
+mme_group_id:
+  patterns:
+    - 'MME_group_id = (\\d+) \\(0x[0-9a-fA-F]+\\)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "MME Group ID"
+
+mme_code:
+  patterns:
+    - 'MME_code = (\\d+) \\(0x[0-9a-fA-F]+\\)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "MME Code"
+
+tmsi:
+  patterns:
+    - 'm_tmsi = (\\d+) \\(0x[0-9a-fA-F]+\\)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Temporary Mobile Subscriber Identity"
+
+nas_key_set_id:
+  patterns:
+    - 'nas_key_set_id = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "NAS Key Set Identifier"
+
+att_type:
+  patterns:
+    - 'att_type = (\\d+).*?\\((.*?)\\)'
+  validation:
+    required: false
+  description: "Attach Type"
+
+tsc:
+  patterns:
+    - 'tsc = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Type of Security Context"
+
+eea:
+  patterns:
+    - '(EEA\\d+(_128)?) = (\\d+)'
+  validation:
+    required: false
+  description: "EPS Encryption Algorithms"
+
+eia:
+  patterns:
+    - '(EIA\\d+(_128)?) = (\\d+)'
+  validation:
+    required: false
+  description: "EPS Integrity Algorithms"
+
+uea:
+  patterns:
+    - '(UEA\\d+) = (\\d+)'
+  validation:
+    required: false
+  description: "UMTS Encryption Algorithms" 
