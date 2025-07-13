@@ -410,7 +410,7 @@ class NASParser:
                 }
                 
                 logger.info("Log parsing completed", **stats)
-                return stats
+                return {**stats, "records": records}
                 
             except Exception as e:
                 logger.error("Error during log parsing", error=str(e), input_file=str(input_path))

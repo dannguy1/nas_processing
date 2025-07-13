@@ -1,0 +1,222 @@
+messages:
+  # 5G MM (Mobility Management) Messages
+  - name: Registration Request
+    hex_code: 0x41
+    procedure: Registration
+    direction: UE→NW
+    description: "UE initiates registration to network"
+    fields: [SUCI, Registration Type, NAS Security Algorithms]
+  - name: Registration Accept
+    hex_code: 0x42
+    procedure: Registration
+    direction: NW→UE
+    description: "Network accepts registration"
+    fields: [Registration Result, TAI List, GUAMI]
+  - name: Registration Complete
+    hex_code: 0x43
+    procedure: Registration
+    direction: UE→NW
+    description: "UE completes registration"
+    fields: []
+  - name: Registration Reject
+    hex_code: 0x44
+    procedure: Registration
+    direction: NW→UE
+    description: "Network rejects registration"
+    fields: [MM Cause]
+  - name: Deregistration Request UE Originating
+    hex_code: 0x45
+    procedure: Deregistration
+    direction: UE→NW
+    description: "UE requests deregistration"
+    fields: [Deregistration Type, NAS Key Set Identifier]
+  - name: Deregistration Accept UE Originating
+    hex_code: 0x46
+    procedure: Deregistration
+    direction: NW→UE
+    description: "Network accepts deregistration"
+    fields: []
+  - name: Deregistration Request NW Initiated
+    hex_code: 0x47
+    procedure: Deregistration
+    direction: NW→UE
+    description: "Network requests deregistration"
+    fields: [Deregistration Type, NAS Key Set Identifier]
+  - name: Deregistration Accept NW Initiated
+    hex_code: 0x48
+    procedure: Deregistration
+    direction: UE→NW
+    description: "UE accepts deregistration"
+    fields: []
+  - name: Service Request
+    hex_code: 0x4C
+    procedure: Service
+    direction: UE→NW
+    description: "UE requests service"
+    fields: [GUAMI, Service Type]
+  - name: Service Reject
+    hex_code: 0x4D
+    procedure: Service
+    direction: NW→UE
+    description: "Network rejects service request"
+    fields: [MM Cause]
+  - name: Authentication Request
+    hex_code: 0x52
+    procedure: Authentication
+    direction: NW→UE
+    description: "Network requests authentication"
+    fields: [RAND, AUTN]
+  - name: Authentication Response
+    hex_code: 0x53
+    procedure: Authentication
+    direction: UE→NW
+    description: "UE responds to authentication"
+    fields: [RES]
+  - name: Authentication Reject
+    hex_code: 0x54
+    procedure: Authentication
+    direction: NW→UE
+    description: "Network rejects authentication"
+    fields: []
+  - name: Authentication Failure
+    hex_code: 0x5C
+    procedure: Authentication
+    direction: UE→NW
+    description: "UE indicates authentication failure"
+    fields: [MM Cause]
+  - name: Security Mode Command
+    hex_code: 0x5D
+    procedure: Security
+    direction: NW→UE
+    description: "Network initiates security mode"
+    fields: [NAS Security Algorithms]
+  - name: Security Mode Complete
+    hex_code: 0x5E
+    procedure: Security
+    direction: UE→NW
+    description: "UE completes security mode"
+    fields: []
+  - name: Security Mode Reject
+    hex_code: 0x5F
+    procedure: Security
+    direction: UE→NW
+    description: "UE rejects security mode"
+    fields: [MM Cause]
+  - name: 5GMM Status
+    hex_code: 0x60
+    procedure: Status
+    direction: UE↔NW
+    description: "5GMM status message"
+    fields: [MM Cause]
+  - name: 5GMM Information
+    hex_code: 0x61
+    procedure: Information
+    direction: NW→UE
+    description: "Network provides 5GMM information"
+    fields: [PLMN List, Emergency Number List]
+  - name: Downlink NAS Transport
+    hex_code: 0x62
+    procedure: Transport
+    direction: NW→UE
+    description: "Network transports NAS message"
+    fields: [NAS Message Container]
+  - name: Uplink NAS Transport
+    hex_code: 0x63
+    procedure: Transport
+    direction: UE→NW
+    description: "UE transports NAS message"
+    fields: [NAS Message Container]
+  - name: UE Capability Enquiry
+    hex_code: 0x65
+    procedure: Capability
+    direction: NW→UE
+    description: "Network enquires UE capability"
+    fields: []
+  - name: UE Capability Information
+    hex_code: 0x66
+    procedure: Capability
+    direction: UE→NW
+    description: "UE provides capability information"
+    fields: [UE Network Capability]
+  - name: Security Protected NAS Message
+    hex_code: 0x70
+    procedure: Security
+    direction: UE↔NW
+    description: "NAS message with security protection"
+    fields: [Security Header, NAS Message]
+
+  # 5G SM (Session Management) Messages
+  - name: PDU Session Establishment Request
+    hex_code: 0xC1
+    procedure: PDU_Session_Establishment
+    direction: UE→NW
+    description: "UE requests PDU session establishment"
+    fields: [PDU Session ID, DNN, S-NSSAI, SSC Mode]
+  - name: PDU Session Establishment Accept
+    hex_code: 0xC2
+    procedure: PDU_Session_Establishment
+    direction: NW→UE
+    description: "Network accepts PDU session establishment"
+    fields: [PDU Session ID, QoS, S-NSSAI]
+  - name: PDU Session Establishment Reject
+    hex_code: 0xC3
+    procedure: PDU_Session_Establishment
+    direction: NW→UE
+    description: "Network rejects PDU session establishment"
+    fields: [SM Cause]
+  - name: PDU Session Modification Request
+    hex_code: 0xC5
+    procedure: PDU_Session_Modification
+    direction: NW→UE or UE→NW
+    description: "Request to modify PDU session"
+    fields: [PDU Session ID, QoS, S-NSSAI]
+  - name: PDU Session Modification Reject
+    hex_code: 0xC6
+    procedure: PDU_Session_Modification
+    direction: NW→UE or UE→NW
+    description: "Reject modification of PDU session"
+    fields: [SM Cause]
+  - name: PDU Session Modification Command
+    hex_code: 0xC7
+    procedure: PDU_Session_Modification
+    direction: NW→UE
+    description: "Network commands PDU session modification"
+    fields: [PDU Session ID, QoS]
+  - name: PDU Session Modification Command Reject
+    hex_code: 0xC8
+    procedure: PDU_Session_Modification
+    direction: UE→NW
+    description: "UE rejects modification command"
+    fields: [SM Cause]
+  - name: PDU Session Release Request
+    hex_code: 0xCA
+    procedure: PDU_Session_Release
+    direction: UE→NW
+    description: "UE requests PDU session release"
+    fields: [PDU Session ID]
+  - name: PDU Session Release Reject
+    hex_code: 0xCB
+    procedure: PDU_Session_Release
+    direction: NW→UE
+    description: "Network rejects PDU session release"
+    fields: [SM Cause]
+  - name: PDU Session Release Command
+    hex_code: 0xCC
+    procedure: PDU_Session_Release
+    direction: NW→UE
+    description: "Network commands PDU session release"
+    fields: [PDU Session ID]
+  - name: PDU Session Release Complete
+    hex_code: 0xCD
+    procedure: PDU_Session_Release
+    direction: UE→NW
+    description: "UE completes PDU session release"
+    fields: [PDU Session ID]
+  - name: 5GSM Status
+    hex_code: 0xE0
+    procedure: Status
+    direction: UE↔NW
+    description: "5GSM status message"
+    fields: [SM Cause]
+
+  # Add more messages as needed from TS 24.501, vendor extensions, or future releases

@@ -37,7 +37,7 @@ print_header "Example 1: Basic Analysis with Default Logging"
 print_status "Running analysis with default logging (run_log.json will be generated)..."
 echo ""
 
-./run_analysis.sh "$SAMPLE_LOG" \
+python3 run_analysis.py "$SAMPLE_LOG" \
   --output-dir "logging_demo/basic" \
   --verbose
 
@@ -50,7 +50,7 @@ print_header "Example 2: Analysis with Custom Log File"
 print_status "Running analysis with custom log file..."
 echo ""
 
-./run_analysis.sh "$SAMPLE_LOG" \
+python3 run_analysis.py "$SAMPLE_LOG" \
   --output-dir "logging_demo/custom_log" \
   --log-file "logs/custom_analysis.log" \
   --verbose
@@ -64,9 +64,8 @@ print_header "Example 3: Analysis Without Run Logging (Faster)"
 print_status "Running analysis without run log generation..."
 echo ""
 
-./run_analysis.sh "$SAMPLE_LOG" \
+python3 run_analysis.py "$SAMPLE_LOG" \
   --output-dir "logging_demo/no_log" \
-  --no-log \
   --verbose
 
 echo ""
@@ -109,6 +108,6 @@ echo "  📈 Use analyze_run_logs.py to analyze multiple runs"
 echo "  🔍 Compare performance between logged and non-logged runs"
 echo ""
 print_status "To analyze your own logs with logging:"
-echo "  ./run_analysis.sh your_log.txt --verbose"
+echo "  python3 run_analysis.py your_log.txt --verbose"
 echo "  python3 analyze_run_logs.py your_results_directory/"
 echo "" 

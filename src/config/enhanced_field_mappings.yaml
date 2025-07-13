@@ -1,0 +1,241 @@
+# Enhanced State Information
+emm_state:
+  patterns:
+    - 'EMM state = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'emm_state = (\d+)'
+    - 'EMM State = (.+)'
+    - 'EMM State Value = (\d+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "EMM State"
+
+emm_sub_state:
+  patterns:
+    - 'EMM sub-state = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'emm_sub_state = (\d+)'
+    - 'EMM Sub-state = (.+)'
+    - 'EMM Sub-state Value = (\d+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "EMM Sub-state"
+
+esm_state:
+  patterns:
+    - 'ESM state = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'esm_state = (\d+)'
+    - 'ESM State = (.+)'
+    - 'ESM State Value = (\d+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "ESM State"
+
+bearer_state:
+  patterns:
+    - 'Bearer State = (.+)'
+    - 'bearer_state = (.+)'
+    - 'State = (.+)'
+  validation:
+    required: false
+    data_type: "string"
+  description: "Bearer Context State"
+
+# Enhanced Bearer Information
+connection_id:
+  patterns:
+    - 'Connection ID = (\d+)'
+    - 'connection_id = (\d+)'
+    - 'Conn ID = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Connection ID"
+
+sdf_id:
+  patterns:
+    - 'SDF ID = (\d+)'
+    - 'sdf_id = (\d+)'
+    - 'SDF_ID = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Service Data Flow ID"
+
+rb_id:
+  patterns:
+    - 'RB ID = (\d+)'
+    - 'rb_id = (\d+)'
+    - 'Radio Bearer ID = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Radio Bearer ID"
+
+lbi_valid:
+  patterns:
+    - 'LBI_VALID = (TRUE|FALSE)'
+    - 'lbi_valid = (TRUE|FALSE)'
+    - 'Linked Bearer ID Valid = (TRUE|FALSE)'
+  validation:
+    required: false
+    data_type: "boolean"
+  description: "Linked Bearer ID Valid"
+
+# Enhanced Protocol Information
+protocol_discriminator:
+  patterns:
+    - 'prot_disc = (\d+)'
+    - 'protocol_discriminator = (\d+)'
+    - 'Protocol Discriminator = (\d+)'
+    - 'PD = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Protocol Discriminator"
+
+security_header_type:
+  patterns:
+    - 'security_header_or_skip_ind = (\d+)'
+    - 'security_header_type = (\d+)'
+    - 'Security Header Type = (\d+)'
+    - 'SHT = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Security Header Type"
+
+ksi:
+  patterns:
+    - 'ksi = (\d+)'
+    - 'KSI = (\d+)'
+    - 'Key Set Identifier = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Key Set Identifier"
+
+seq_num:
+  patterns:
+    - 'seq_num = (\d+)'
+    - 'sequence_number = (\d+)'
+    - 'Sequence Number = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Sequence Number"
+
+short_mac_value:
+  patterns:
+    - 'short_mac_value = (\d+)'
+    - 'Short MAC Value = (\d+)'
+    - 'MAC = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Short MAC Value"
+
+# Enhanced Network Information
+forbidden_tai_list:
+  patterns:
+    - 'Forbidden TAI List.*tai list length = (\d+)'
+    - 'forbidden_tai_list.*length = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Forbidden TAI List Length"
+
+emergency_num_list:
+  patterns:
+    - 'emergency_num_list.*count = (\d+)'
+    - 'Emergency Number List.*count = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Emergency Number List Count"
+
+eps_netwk_feature_support:
+  patterns:
+    - 'eps_netwk_feature_support.*length = (\d+)'
+    - 'EPS Network Feature Support.*length = (\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "EPS Network Feature Support Length"
+
+# Enhanced Container Information
+esm_msg_container:
+  patterns:
+    - 'esm_msg_container.*msg_type = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'esm_msg_container.*trans_id = (\d+)'
+    - 'esm_msg_container.*eps_bearer_id_or_skip_id = (\d+)'
+  validation:
+    required: false
+  description: "ESM Message Container Information"
+
+protocol_config:
+  patterns:
+    - 'prot_config.*num_recs = (\d+)'
+    - 'ext_prot_config.*num_recs = (\d+)'
+    - 'prot_or_container\[(\d+)\].*id = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+  validation:
+    required: false
+  description: "Protocol Configuration Information"
+
+dns_servers:
+  patterns:
+    - 'DNS Server IPv4 Address.*container_contents\[(\d+)\] = (\d+)'
+    - 'DNS Server IPv6 Address.*addr = 0x([0-9a-fA-F]+)'
+    - 'rfc1877_primary_dns_server_add.*ip_addr = (\d+) \(0x[0-9a-fA-F]+\) \(([ 0-9\\.]+)\)'
+    - 'rfc1877_sec_dns_server_add.*ip_addr = (\d+) \(0x[0-9a-fA-F]+\) \(([ 0-9\\.]+)\)'
+  validation:
+    required: false
+  description: "DNS Server Information"
+
+ipcp_config:
+  patterns:
+    - 'ipcp_prot_id = (\d+) \(0x[0-9a-fA-F]+\) \((.+)\)'
+    - 'identifier = (\d+)'
+    - 'num_options = (\d+)'
+  validation:
+    required: false
+  description: "IPCP Configuration Information"
+
+msisdn_data:
+  patterns:
+    - 'MSISDN.*prot_len = (\d+)'
+    - 'MSISDN.*container_contents\[(\d+)\] = (\d+)'
+  validation:
+    required: false
+  description: "MSISDN Information"
+
+mtu_info:
+  patterns:
+    - 'Ipv4 Link MTU Request.*prot_len = (\d+)'
+    - 'container_contents\[0\] = (\d+)'
+    - 'container_contents\[1\] = (\d+)'
+  validation:
+    required: false
+  description: "MTU Information"
+
+vendor_containers:
+  patterns:
+    - 'id = 65280 \(0xff00\) \(unknown\)'
+    - 'id = 65283 \(0xff03\) \(unknown\)'
+    - 'container_contents\[(\d+)\] = (\d+)'
+  validation:
+    required: false
+  description: "Vendor-Specific Container Information"
+
+# Enhanced Multi-line Field Support
+multi_line_fields:
+  - bearer_context
+  - security_context
+  - apn_configuration
+  - qos_parameters
+  - network_parameters
+  - state_information
+  - protocol_information
+  - embedded_containers
+  - protocol_configuration 

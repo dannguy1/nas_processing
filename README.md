@@ -6,11 +6,14 @@ A comprehensive system for parsing, analyzing, and grouping 3GPP NAS logs from Q
 
 ### Basic Usage
 ```bash
-# Run complete analysis with default settings
-./run_analysis.sh data/raw_logs/my_log.txt
+# Run enhanced analysis with default settings
+python3 run_analysis.py data/raw_logs/my_log.txt
+
+# Run complete analysis with grouping
+python3 run_analysis.py data/raw_logs/my_log.txt --mode complete
 
 # Using input/output options
-./run_analysis.sh -i data/raw_logs/my_log.txt -o results/my_analysis
+python3 run_analysis.py data/raw_logs/my_log.txt --output-dir results/my_analysis
 
 # Or use the Python script directly
 python3 run_complete_analysis.py data/raw_logs/my_log.txt
@@ -38,9 +41,12 @@ python3 run_complete_analysis.py data/raw_logs/my_log.txt
 
 4. **Run Complete Analysis**
    ```bash
-   # Run the complete workflow
-   ./run_analysis.sh data/raw_logs/your_log.txt
-   ```
+# Run the enhanced workflow (default)
+python3 run_analysis.py data/raw_logs/your_log.txt
+
+# Run the complete workflow with grouping
+python3 run_analysis.py data/raw_logs/your_log.txt --mode complete
+```
 
 ## 📋 What the System Does
 
@@ -219,27 +225,24 @@ python3 -m src.main --log-file logs/processing.log parse -i input.txt -o output.
 ### Network Troubleshooting
 ```bash
 # Analyze attach failures
-./run_analysis.sh -i data/raw_logs/attach_failure.txt \
-  --group-by procedure \
-  --formats csv,html \
+python3 run_analysis.py data/raw_logs/attach_failure.txt \
+  --output-dir results/attach_failure_analysis \
   --verbose
 ```
 
 ### Performance Analysis
 ```bash
 # Analyze bearer setup performance
-./run_analysis.sh -i data/raw_logs/bearer_test.txt \
-  --group-by procedure,direction \
-  --formats csv,json,html \
+python3 run_analysis.py data/raw_logs/bearer_test.txt \
+  --output-dir results/bearer_analysis \
   --verbose
 ```
 
 ### Security Analysis
 ```bash
 # Analyze security message flows
-./run_analysis.sh -i data/raw_logs/security_test.txt \
-  --group-by message_type \
-  --formats csv,html \
+python3 run_analysis.py data/raw_logs/security_test.txt \
+  --output-dir results/security_analysis \
   --verbose
 ```
 
@@ -247,7 +250,7 @@ python3 -m src.main --log-file logs/processing.log parse -i input.txt -o output.
 ```bash
 # Process multiple log files
 for log in data/raw_logs/*.txt; do
-  ./run_analysis.sh -i "$log" -o "results/$(basename "$log" .txt)"
+  python3 run_analysis.py "$log" --output-dir "results/$(basename "$log" .txt)"
 done
 ```
 
@@ -334,7 +337,7 @@ python3 -m src.main parse --help
 python3 -m src.main group --help
 
 # Run with verbose logging
-./run_analysis.sh -i data/raw_logs/my_log.txt --verbose
+python3 run_analysis.py data/raw_logs/my_log.txt --verbose
 ```
 
 ## 📚 Configuration

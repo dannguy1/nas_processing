@@ -152,4 +152,89 @@ uea:
     - '(UEA\\d+) = (\\d+)'
   validation:
     required: false
-  description: "UMTS Encryption Algorithms" 
+  description: "UMTS Encryption Algorithms"
+
+# Enhanced fields for container analysis
+subscription_id:
+  patterns:
+    - 'subscription_id = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Subscription ID"
+
+version:
+  patterns:
+    - 'version = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Protocol version"
+
+trans_id:
+  patterns:
+    - 'trans_id = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Transaction ID"
+
+emm_state:
+  patterns:
+    - 'emm_state = ([A-Z_]+)'
+  validation:
+    required: false
+  description: "EMM state"
+
+emm_sub_state:
+  patterns:
+    - 'emm_sub_state = ([A-Z_]+)'
+  validation:
+    required: false
+  description: "EMM sub-state"
+
+procedure_state:
+  patterns:
+    - 'procedure_state = ([A-Z_]+)'
+  validation:
+    required: false
+  description: "Procedure state"
+
+pti:
+  patterns:
+    - 'pti = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Procedure Transaction Identity"
+
+sdf_id:
+  patterns:
+    - 'sdf_id = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Service Data Flow ID"
+
+bearer_state:
+  patterns:
+    - 'bearer_state = ([A-Z_ ]+)'
+  validation:
+    required: false
+  description: "Bearer state"
+
+connection_id:
+  patterns:
+    - 'connection_id = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Connection ID"
+
+rb_id:
+  patterns:
+    - 'rb_id = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Radio Bearer ID" 

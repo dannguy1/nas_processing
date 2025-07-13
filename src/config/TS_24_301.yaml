@@ -1,0 +1,370 @@
+messages:
+  # EMM (EPS Mobility Management) Messages
+  - name: Attach Request
+    hex_code: 0x41
+    procedure: Attach
+    direction: UE→NW
+    description: "UE initiates attach to network"
+    fields: [IMSI, GUTI, Attach Type, EPS NAS Security Algorithms]
+  - name: Attach Accept
+    hex_code: 0x42
+    procedure: Attach
+    direction: NW→UE
+    description: "Network accepts attach"
+    fields: [EPS Attach Result, TAI List, GUTI]
+  - name: Attach Complete
+    hex_code: 0x43
+    procedure: Attach
+    direction: UE→NW
+    description: "UE completes attach procedure"
+    fields: [EPS Attach Type]
+  - name: Attach Reject
+    hex_code: 0x44
+    procedure: Attach
+    direction: NW→UE
+    description: "Network rejects attach"
+    fields: [EMM Cause]
+  - name: Detach Request
+    hex_code: 0x45
+    procedure: Detach
+    direction: UE→NW or NW→UE
+    description: "Detach procedure initiated"
+    fields: [Detach Type, NAS Key Set Identifier]
+  - name: Detach Accept
+    hex_code: 0x46
+    procedure: Detach
+    direction: UE→NW or NW→UE
+    description: "Detach procedure accepted"
+    fields: []
+  - name: Tracking Area Update Request
+    hex_code: 0x48
+    procedure: TAU
+    direction: UE→NW
+    description: "UE requests tracking area update"
+    fields: [TAI, Update Type]
+  - name: Tracking Area Update Accept
+    hex_code: 0x49
+    procedure: TAU
+    direction: NW→UE
+    description: "Network accepts TAU"
+    fields: [TAI List, GUTI]
+  - name: Tracking Area Update Complete
+    hex_code: 0x4A
+    procedure: TAU
+    direction: UE→NW
+    description: "UE completes TAU"
+    fields: []
+  - name: Tracking Area Update Reject
+    hex_code: 0x4B
+    procedure: TAU
+    direction: NW→UE
+    description: "Network rejects TAU"
+    fields: [EMM Cause]
+  - name: Service Request
+    hex_code: 0x4C
+    procedure: Service
+    direction: UE→NW
+    description: "UE requests service"
+    fields: [GUTI, Service Type]
+  - name: Service Reject
+    hex_code: 0x4D
+    procedure: Service
+    direction: NW→UE
+    description: "Network rejects service request"
+    fields: [EMM Cause]
+  - name: GUTI Reallocation Command
+    hex_code: 0x50
+    procedure: GUTI_Reallocation
+    direction: NW→UE
+    description: "Network reallocates GUTI"
+    fields: [GUTI]
+  - name: GUTI Reallocation Complete
+    hex_code: 0x51
+    procedure: GUTI_Reallocation
+    direction: UE→NW
+    description: "UE completes GUTI reallocation"
+    fields: []
+  - name: Authentication Request
+    hex_code: 0x52
+    procedure: Authentication
+    direction: NW→UE
+    description: "Network requests authentication"
+    fields: [RAND, AUTN]
+  - name: Authentication Response
+    hex_code: 0x53
+    procedure: Authentication
+    direction: UE→NW
+    description: "UE responds to authentication"
+    fields: [RES]
+  - name: Authentication Reject
+    hex_code: 0x54
+    procedure: Authentication
+    direction: NW→UE
+    description: "Network rejects authentication"
+    fields: []
+  - name: Authentication Failure
+    hex_code: 0x5C
+    procedure: Authentication
+    direction: UE→NW
+    description: "UE indicates authentication failure"
+    fields: [EMM Cause]
+  - name: Security Mode Command
+    hex_code: 0x5D
+    procedure: Security
+    direction: NW→UE
+    description: "Network initiates security mode"
+    fields: [NAS Security Algorithms]
+  - name: Security Mode Complete
+    hex_code: 0x5E
+    procedure: Security
+    direction: UE→NW
+    description: "UE completes security mode"
+    fields: []
+  - name: Security Mode Reject
+    hex_code: 0x5F
+    procedure: Security
+    direction: UE→NW
+    description: "UE rejects security mode"
+    fields: [EMM Cause]
+  - name: EMM Status
+    hex_code: 0x60
+    procedure: Status
+    direction: UE↔NW
+    description: "EMM status message"
+    fields: [EMM Cause]
+  - name: EMM Information
+    hex_code: 0x61
+    procedure: Information
+    direction: NW→UE
+    description: "Network provides EMM information"
+    fields: [PLMN List, Emergency Number List]
+  - name: Downlink NAS Transport
+    hex_code: 0x62
+    procedure: Transport
+    direction: NW→UE
+    description: "Network transports NAS message"
+    fields: [NAS Message Container]
+  - name: Uplink NAS Transport
+    hex_code: 0x63
+    procedure: Transport
+    direction: UE→NW
+    description: "UE transports NAS message"
+    fields: [NAS Message Container]
+  - name: CS Service Notification
+    hex_code: 0x64
+    procedure: Service
+    direction: NW→UE
+    description: "Network notifies CS service"
+    fields: [CSFB Response]
+  - name: UE Capability Enquiry
+    hex_code: 0x65
+    procedure: Capability
+    direction: NW→UE
+    description: "Network enquires UE capability"
+    fields: []
+  - name: UE Capability Information
+    hex_code: 0x66
+    procedure: Capability
+    direction: UE→NW
+    description: "UE provides capability information"
+    fields: [UE Network Capability]
+  - name: Security Protected NAS Message
+    hex_code: 0x70
+    procedure: Security
+    direction: UE↔NW
+    description: "NAS message with security protection"
+    fields: [Security Header, NAS Message]
+
+  # ESM (EPS Session Management) Messages
+  - name: Activate Default EPS Bearer Context Request
+    hex_code: 0xC1
+    procedure: Bearer_Management
+    direction: NW→UE
+    description: "Network requests default bearer activation"
+    fields: [EPS Bearer ID, APN, QoS]
+  - name: Activate Default EPS Bearer Context Accept
+    hex_code: 0xC2
+    procedure: Bearer_Management
+    direction: UE→NW
+    description: "UE accepts default bearer activation"
+    fields: [EPS Bearer ID]
+  - name: Activate Default EPS Bearer Context Reject
+    hex_code: 0xC3
+    procedure: Bearer_Management
+    direction: UE→NW
+    description: "UE rejects default bearer activation"
+    fields: [ESM Cause]
+  - name: Activate Dedicated EPS Bearer Context Request
+    hex_code: 0xC5
+    procedure: Bearer_Management
+    direction: NW→UE
+    description: "Network requests dedicated bearer activation"
+    fields: [EPS Bearer ID, QoS]
+  - name: Activate Dedicated EPS Bearer Context Accept
+    hex_code: 0xC6
+    procedure: Bearer_Management
+    direction: UE→NW
+    description: "UE accepts dedicated bearer activation"
+    fields: [EPS Bearer ID]
+  - name: Activate Dedicated EPS Bearer Context Reject
+    hex_code: 0xC7
+    procedure: Bearer_Management
+    direction: UE→NW
+    description: "UE rejects dedicated bearer activation"
+    fields: [ESM Cause]
+  - name: Modify EPS Bearer Context Request
+    hex_code: 0xC9
+    procedure: Bearer_Management
+    direction: NW→UE
+    description: "Network requests bearer modification"
+    fields: [EPS Bearer ID, QoS]
+  - name: Modify EPS Bearer Context Accept
+    hex_code: 0xCA
+    procedure: Bearer_Management
+    direction: UE→NW
+    description: "UE accepts bearer modification"
+    fields: [EPS Bearer ID]
+  - name: Modify EPS Bearer Context Reject
+    hex_code: 0xCB
+    procedure: Bearer_Management
+    direction: UE→NW
+    description: "UE rejects bearer modification"
+    fields: [ESM Cause]
+  - name: Deactivate EPS Bearer Context Request
+    hex_code: 0xCD
+    procedure: Bearer_Management
+    direction: NW→UE or UE→NW
+    description: "Request to deactivate bearer context"
+    fields: [EPS Bearer ID]
+  - name: Deactivate EPS Bearer Context Accept
+    hex_code: 0xCE
+    procedure: Bearer_Management
+    direction: NW→UE or UE→NW
+    description: "Accept deactivation of bearer context"
+    fields: [EPS Bearer ID]
+  - name: ESM Information Request
+    hex_code: 0xD9
+    procedure: Bearer_Management
+    direction: NW→UE
+    description: "Network requests ESM information"
+    fields: [PTI]
+  - name: ESM Information Response
+    hex_code: 0xDA
+    procedure: Bearer_Management
+    direction: UE→NW
+    description: "UE responds with ESM information"
+    fields: [APN, Protocol Config Options]
+  - name: PDN Connectivity Request
+    hex_code: 0xC1
+    procedure: PDN_Connectivity
+    direction: UE→NW
+    description: "UE requests PDN connectivity"
+    fields: [APN, PDN Type]
+  - name: PDN Connectivity Reject
+    hex_code: 0xC2
+    procedure: PDN_Connectivity
+    direction: NW→UE
+    description: "Network rejects PDN connectivity"
+    fields: [ESM Cause]
+  - name: PDN Disconnect Request
+    hex_code: 0xC3
+    procedure: PDN_Disconnect
+    direction: UE→NW
+    description: "UE requests PDN disconnect"
+    fields: [EPS Bearer ID]
+  - name: PDN Disconnect Reject
+    hex_code: 0xC4
+    procedure: PDN_Disconnect
+    direction: NW→UE
+    description: "Network rejects PDN disconnect"
+    fields: [ESM Cause]
+  - name: Bearer Resource Allocation Request
+    hex_code: 0xC5
+    procedure: Bearer_Resource_Allocation
+    direction: UE→NW
+    description: "UE requests bearer resource allocation"
+    fields: [EPS Bearer ID, QoS]
+  - name: Bearer Resource Allocation Reject
+    hex_code: 0xC6
+    procedure: Bearer_Resource_Allocation
+    direction: NW→UE
+    description: "Network rejects bearer resource allocation"
+    fields: [ESM Cause]
+  - name: Bearer Resource Modification Request
+    hex_code: 0xC7
+    procedure: Bearer_Resource_Modification
+    direction: UE→NW
+    description: "UE requests bearer resource modification"
+    fields: [EPS Bearer ID, QoS]
+  - name: Bearer Resource Modification Reject
+    hex_code: 0xC8
+    procedure: Bearer_Resource_Modification
+    direction: NW→UE
+    description: "Network rejects bearer resource modification"
+    fields: [ESM Cause]
+  - name: ESM Status
+    hex_code: 0xE0
+    procedure: Status
+    direction: UE↔NW
+    description: "ESM status message"
+    fields: [ESM Cause]
+
+  # State and Context Messages (Non-standard but present in logs)
+  - name: EMM State
+    hex_code: 0xB0EE
+    procedure: State
+    direction: State
+    description: "EMM state information"
+    fields: [EMM State, EMM Sub-state, PLMN ID, GUTI]
+  - name: ESM Procedure State
+    hex_code: 0xB0E6
+    procedure: State
+    direction: State
+    description: "ESM procedure state information"
+    fields: [Procedure State, PTI, SDF ID, Pending Msg ID]
+  - name: ESM Bearer Context State
+    hex_code: 0xB0E4
+    procedure: State
+    direction: State
+    description: "ESM bearer context state"
+    fields: [Bearer ID, Bearer State, Connection ID]
+  - name: ESM Bearer Context Info
+    hex_code: 0xB0E5
+    procedure: State
+    direction: State
+    description: "ESM bearer context information"
+    fields: [Bearer ID, Bearer State, Connection ID, SDF ID, RB ID, EPS QoS]
+  - name: EMM Forbidden TAI List
+    hex_code: 0xB0F6
+    procedure: State
+    direction: State
+    description: "EMM forbidden TAI list"
+    fields: [Forbidden TAI List for Roaming, Forbidden TAI List for Service]
+
+  # Security Protected Messages (Non-standard but present in logs)
+  - name: EMM Security Protected Incoming Msg
+    hex_code: 0xB0EA
+    procedure: Security
+    direction: NW→UE
+    description: "EMM security protected incoming message"
+    fields: [Raw Data]
+  - name: EMM Security Protected Outgoing Msg
+    hex_code: 0xB0EB
+    procedure: Security
+    direction: UE→NW
+    description: "EMM security protected outgoing message"
+    fields: [Raw Data]
+  - name: ESM Security Protected Incoming Msg
+    hex_code: 0xB0EA
+    procedure: Security
+    direction: NW→UE
+    description: "ESM security protected incoming message"
+    fields: [Raw Data]
+  - name: ESM Security Protected Outgoing Msg
+    hex_code: 0xB0E1
+    procedure: Security
+    direction: UE→NW
+    description: "ESM security protected outgoing message"
+    fields: [Raw Data]
+
+  # Add more messages as needed from TS 24.301, TS 24.008, TS 24.501
