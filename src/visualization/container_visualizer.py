@@ -276,6 +276,10 @@ class ContainerVisualizer:
         summary = analysis_data.get('container_analysis', {}).get('summary', {})
         details = analysis_data.get('container_analysis', {}).get('details', {})
         
+        # Create container detail pages directory
+        container_pages_dir = self.output_dir / "container_details"
+        container_pages_dir.mkdir(exist_ok=True)
+        
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -291,6 +295,8 @@ class ContainerVisualizer:
                 th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
                 th {{ background-color: #f2f2f2; }}
                 .highlight {{ background-color: #fff3cd; }}
+                .container-link {{ color: #2E8B57; text-decoration: none; font-weight: bold; }}
+                .container-link:hover {{ text-decoration: underline; }}
             </style>
         </head>
         <body>
@@ -361,21 +367,52 @@ class ContainerVisualizer:
             <div class="section">
                 <h2>📋 Message Details with Containers</h2>
                 <table>
-                    <tr><th>Timestamp</th><th>Message Type</th><th>Direction</th><th>Bearer ID</th><th>QCI</th></tr>
+                    <tr><th>Timestamp</th><th>Message Type</th><th>Direction</th><th>Bearer ID</th><th>QCI</th><th>Container Details</th></tr>
         """
         
-        # Add message details
+        # Add message details with links to individual container pages
+        # Use original working logic: messages with subscription_id (which indicates containers)
         container_msgs = csv_data[csv_data['subscription_id'].notna()]
-        for _, row in container_msgs.head(20).iterrows():  # Show first 20
-            html_content += f"""
+        for idx, row in container_msgs.head(20).iterrows():  # Show first 20
+            container_json = row.get('embedded_containers_json', '')
+            
+            # Create individual container detail page
+            if container_json and isinstance(container_json, str) and container_json.strip():
+                # Create a unique filename for this message
+                timestamp_clean = row.get('timestamp', '').replace(' ', '_').replace(':', '-')
+                msg_type_clean = row.get('message_type', '').replace(' ', '_').replace('/', '_')
+                detail_filename = f"container_detail_{timestamp_clean}_{msg_type_clean}.html"
+                detail_path = container_pages_dir / detail_filename
+                
+                # Create the individual container detail page
+                self._create_individual_container_page(detail_path, row, container_json)
+                
+                # Add link to the main report
+                html_content += f"""
                 <tr>
                     <td>{row.get('timestamp', '')}</td>
                     <td>{row.get('message_type', '')}</td>
                     <td>{row.get('direction', '')}</td>
                     <td>{row.get('bearer_id', '')}</td>
                     <td>{row.get('qci', '')}</td>
+                    <td>
+                        <a href="container_details/{detail_filename}" class="container-link" target="_blank">
+                            📋 View Container Details
+                        </a>
+                    </td>
                 </tr>
-            """
+                """
+            else:
+                html_content += f"""
+                <tr>
+                    <td>{row.get('timestamp', '')}</td>
+                    <td>{row.get('message_type', '')}</td>
+                    <td>{row.get('direction', '')}</td>
+                    <td>{row.get('bearer_id', '')}</td>
+                    <td>{row.get('qci', '')}</td>
+                    <td>No container content available</td>
+                </tr>
+                """
         
         html_content += """
                 </table>
@@ -404,6 +441,85 @@ class ContainerVisualizer:
             f.write(html_content)
         
         return str(output_path)
+    
+    def _create_individual_container_page(self, file_path: Path, row: pd.Series, container_json: str):
+        """Create an individual container detail page for a specific message."""
+        
+        # Parse the JSON for better display
+        try:
+            import json
+            container_data = json.loads(container_json)
+            formatted_json = json.dumps(container_data, indent=2)
+        except:
+            formatted_json = container_json
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Container Details - {row.get('message_type', 'Unknown')}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }}
+                .header {{ background-color: #2E8B57; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; }}
+                .message-info {{ background-color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                .container-content {{ background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                .info-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }}
+                .info-item {{ padding: 10px; background-color: #f8f9fa; border-radius: 3px; }}
+                .info-label {{ font-weight: bold; color: #2E8B57; }}
+                .json-content {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; }}
+                .back-link {{ color: #2E8B57; text-decoration: none; font-weight: bold; }}
+                .back-link:hover {{ text-decoration: underline; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📋 Container Details</h1>
+                <p>Detailed container analysis for: <strong>{row.get('message_type', 'Unknown')}</strong></p>
+                <a href="../detailed_container_report.html" class="back-link">← Back to Container Report</a>
+            </div>
+            
+            <div class="message-info">
+                <h2>📄 Message Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Timestamp:</div>
+                        <div>{row.get('timestamp', 'N/A')}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Message Type:</div>
+                        <div>{row.get('message_type', 'N/A')}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Direction:</div>
+                        <div>{row.get('direction', 'N/A')}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Bearer ID:</div>
+                        <div>{row.get('bearer_id', 'N/A')}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">QCI:</div>
+                        <div>{row.get('qci', 'N/A')}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Subscription ID:</div>
+                        <div>{row.get('subscription_id', 'N/A')}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="container-content">
+                <h2>🔍 Embedded Container Content</h2>
+                <div class="json-content">
+                    <pre>{formatted_json}</pre>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        with open(file_path, 'w') as f:
+            f.write(html_content)
     
     def generate_all_visualizations(self, analysis_data: Dict[str, Any], 
                                   csv_file: str) -> Dict[str, str]:

@@ -48,37 +48,48 @@ class EnhancedNASParser(NASParser):
         # Store input file path for container analysis
         self.current_input_file = input_file
         
-        # Use parent class parsing as base
-        base_result = super().parse_log(input_file, output_file)
+        # Use a temporary file for parent class parsing
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as temp_file:
+            temp_output = temp_file.name
         
-        # Enhance the parsed data with YAML definitions
-        enhanced_records = self._enhance_records_with_definitions(base_result.get('records', []))
-        
-        # Enhance records with container information
-        container_enhanced_records = self._enhance_records_with_containers(enhanced_records)
-        
-        # Write enhanced results
-        enhanced_output = output_file.replace('.csv', '_enhanced.csv').replace('.json', '_enhanced.json')
-        self._write_enhanced_csv(container_enhanced_records, enhanced_output)
-        
-        # Generate comprehensive analysis report
-        analysis_report = self._generate_analysis_report(container_enhanced_records)
-        
-        # Add container analysis to the report
-        container_analysis = self._generate_container_analysis_report(container_enhanced_records)
-        analysis_report['container_analysis'] = container_analysis
-        
-        # Update the result with enhanced data
-        result = {
-            'records': container_enhanced_records,
-            'analysis_report': analysis_report,
-            'base_parser_result': base_result
-        }
-        
-        logger.info("Enhanced parsing completed", 
-                   enhanced_records=len(container_enhanced_records))
-        
-        return result
+        try:
+            # Parse with parent class to temporary file
+            base_result = super().parse_log(input_file, temp_output)
+            
+            # Enhance the parsed data with YAML definitions
+            enhanced_records = self._enhance_records_with_definitions(base_result.get('records', []))
+            
+            # Enhance records with container information
+            container_enhanced_records = self._enhance_records_with_containers(enhanced_records)
+            
+            # Write consolidated enhanced results directly to the target file
+            self._write_enhanced_csv(container_enhanced_records, output_file)
+            
+            # Generate comprehensive analysis report
+            analysis_report = self._generate_analysis_report(container_enhanced_records)
+            
+            # Add container analysis to the report
+            container_analysis = self._generate_container_analysis_report(container_enhanced_records)
+            analysis_report['container_analysis'] = container_analysis
+            
+            # Update the result with enhanced data
+            result = {
+                'records': container_enhanced_records,
+                'analysis_report': analysis_report,
+                'base_parser_result': base_result
+            }
+            
+            logger.info("Enhanced parsing completed", 
+                       enhanced_records=len(container_enhanced_records))
+            
+            return result
+            
+        finally:
+            # Clean up temporary file
+            import os
+            if os.path.exists(temp_output):
+                os.unlink(temp_output)
     
     def _enhance_records_with_definitions(self, records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Enhance parsed records with YAML definition information."""
@@ -195,14 +206,48 @@ class EnhancedNASParser(NASParser):
             return
         
         try:
+            # Get all unique fieldnames from all records
+            all_fields = set()
+            for record in records:
+                all_fields.update(record.keys())
+            
+            # Write CSV with all fields, properly handling JSON content
             with open(output_file, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=records[0].keys())
+                writer = csv.DictWriter(f, fieldnames=sorted(all_fields), quoting=csv.QUOTE_ALL)
                 writer.writeheader()
-                writer.writerows(records)
+                
+                # Process each record to handle JSON content properly
+                for record in records:
+                    processed_record = {}
+                    for key, value in record.items():
+                        if key == 'embedded_containers_json' and value:
+                            # Replace newlines and ensure proper escaping for JSON content
+                            if isinstance(value, str):
+                                # Replace newlines with spaces to prevent CSV row breaks
+                                processed_record[key] = value.replace('\n', ' ').replace('\r', ' ')
+                            else:
+                                processed_record[key] = str(value)
+                        else:
+                            processed_record[key] = value
+                    
+                    writer.writerow(processed_record)
             
             logger.info(f"Enhanced CSV written to {output_file}")
         except Exception as e:
             logger.error(f"Failed to write enhanced CSV", error=str(e))
+            # Fallback: write without enhanced fields
+            try:
+                with open(output_file, 'w', newline='', encoding='utf-8') as f:
+                    # Use only the original fieldnames
+                    writer = csv.DictWriter(f, fieldnames=self.fieldnames, quoting=csv.QUOTE_ALL)
+                    writer.writeheader()
+                    # Write only the original fields
+                    for record in records:
+                        original_record = {k: v for k, v in record.items() if k in self.fieldnames}
+                        writer.writerow(original_record)
+                logger.info(f"Fallback CSV written to {output_file}")
+            except Exception as e2:
+                logger.error(f"Failed to write fallback CSV", error=str(e2))
     
     def _generate_analysis_report(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Generate comprehensive analysis report with field coverage, unknown messages, and value distributions."""
@@ -720,6 +765,10 @@ class EnhancedNASParser(NASParser):
                 enhanced_record['has_embedded_containers'] = True
                 enhanced_record['container_types'] = list(containers.keys())
                 
+                # Add pretty-printed JSON container content
+                import json
+                enhanced_record['embedded_containers_json'] = json.dumps(containers, indent=2, ensure_ascii=False)
+                
                 # Add specific container data
                 if 'esm_container' in containers:
                     enhanced_record['esm_container_info'] = containers['esm_container']
@@ -759,6 +808,7 @@ class EnhancedNASParser(NASParser):
                     enhanced_record['vendor_specific_count'] = len(containers['vendor_specific'])
             else:
                 enhanced_record['has_embedded_containers'] = False
+                enhanced_record['embedded_containers_json'] = ""
             
             enhanced_records.append(enhanced_record)
         

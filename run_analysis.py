@@ -119,7 +119,7 @@ class UnifiedAnalysisWorkflow:
         
         # Step 5: Generate comprehensive report
         self._generate_comprehensive_report(output_dir, parsed_file, container_analysis, 
-                                         visualization_files, basic_analysis_files)
+                                         visualization_files, basic_analysis_files, input_log)
         
         # Step 6: Display results
         self._display_enhanced_results(output_dir)
@@ -412,7 +412,7 @@ class UnifiedAnalysisWorkflow:
             raise RuntimeError(f"Analysis failed: {result['error']}")
     
     def _generate_comprehensive_report(self, output_dir: str, parsed_file: str, 
-                                    container_analysis: dict, visualization_files: dict, basic_analysis_files: dict = None):
+                                    container_analysis: dict, visualization_files: dict, basic_analysis_files: dict = None, original_input_file: str = None):
         """Generate comprehensive report for enhanced mode."""
         logger.info("📋 Step 5: Generating comprehensive report")
         
@@ -436,7 +436,7 @@ class UnifiedAnalysisWorkflow:
             'workflow_info': {
                 'start_time': time.strftime('%Y-%m-%dT%H:%M:%S'),
                 'duration_seconds': time.time() - self.start_time,
-                'input_file': parsed_file,
+                'input_file': original_input_file if original_input_file else parsed_file,
                 'output_directory': output_dir,
                 'mode': 'enhanced'
             },
@@ -471,6 +471,9 @@ class UnifiedAnalysisWorkflow:
         report_file = Path(output_dir) / "enhanced_analysis_report.json"
         with open(report_file, 'w') as f:
             json.dump(report, f, indent=2)
+        
+        # Generate top-level HTML dashboard
+        self._generate_top_level_html_report(output_dir, report, 'enhanced')
         
         logger.info("✅ Comprehensive report completed")
     
@@ -523,8 +526,365 @@ class UnifiedAnalysisWorkflow:
         with open(report_file, 'w') as f:
             json.dump(summary, f, indent=2)
         
+        # Generate top-level HTML dashboard
+        self._generate_top_level_html_report(output_dir, summary, 'complete')
+        
         logger.info("✅ Summary report generated", report_file=str(report_file))
         return summary
+    
+    def _generate_top_level_html_report(self, output_dir: str, report: dict, mode: str):
+        """Generate a top-level HTML report that serves as a dashboard/index page."""
+        logger.info("🌐 Generating top-level HTML analysis report")
+        
+        output_path = Path(output_dir)
+        
+        # Collect all files in the output directory
+        all_files = []
+        for file_path in output_path.rglob("*"):
+            if file_path.is_file() and file_path.suffix in ['.html', '.csv', '.json', '.png', '.pdf']:
+                relative_path = file_path.relative_to(output_path)
+                size_mb = file_path.stat().st_size / (1024 * 1024)
+                
+                # Categorize files
+                category = self._categorize_file(file_path)
+                
+                all_files.append({
+                    'name': file_path.name,
+                    'path': str(relative_path),
+                    'size_mb': size_mb,
+                    'category': category,
+                    'type': file_path.suffix[1:].upper() if file_path.suffix else 'Unknown'
+                })
+        
+        # Sort files by category and name
+        all_files.sort(key=lambda x: (x['category'], x['name']))
+        
+        # Generate HTML content
+        html_content = self._create_html_dashboard(report, all_files, mode)
+        
+        # Write HTML file
+        html_file = output_path / "analysis_dashboard.html"
+        with open(html_file, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        logger.info("✅ Top-level HTML report generated", html_file=str(html_file))
+    
+    def _categorize_file(self, file_path: Path) -> str:
+        """Categorize a file based on its name and location."""
+        name = file_path.name.lower()
+        
+        if 'dashboard' in name or 'index' in name:
+            return 'Dashboard'
+        elif 'parsed' in name:
+            return 'Parsed Data'
+        elif 'analysis' in name and 'report' in name:
+            return 'Analysis Reports'
+        elif 'sequence' in name:
+            return 'Sequence Diagrams'
+        elif 'timeline' in name:
+            return 'Timeline Visualizations'
+        elif 'container' in name:
+            return 'Container Analysis'
+        elif 'grouped' in name or file_path.parent.name == 'grouped':
+            return 'Grouped Data'
+        elif file_path.suffix == '.png':
+            return 'Charts & Images'
+        elif file_path.suffix == '.json':
+            return 'Data Files'
+        elif file_path.suffix == '.csv':
+            return 'Data Files'
+        elif file_path.suffix == '.html':
+            return 'Interactive Reports'
+        else:
+            return 'Other Files'
+    
+    def _filter_files_for_category(self, category: str, files: list, mode: str) -> list:
+        """Filter files for display based on category and mode."""
+        if category == 'Analysis Reports':
+            # Only show enhanced versions
+            return [f for f in files if 'enhanced' in f['name'].lower()]
+        
+        elif category == 'Container Analysis':
+            # Only show the 3 essential files
+            essential_files = ['detailed_container_report.html', 'container_summary.png', 'container_analysis.json']
+            return [f for f in files if f['name'] in essential_files]
+        
+        else:
+            # Show all files for other categories
+            return files
+    
+    def _create_html_dashboard(self, report: dict, files: list, mode: str) -> str:
+        """Create HTML dashboard content."""
+        workflow_info = report['workflow_info']
+        files_info = report['files']
+        
+        # Calculate statistics
+        total_files = len(files)
+        total_size_mb = sum(f['size_mb'] for f in files)
+        
+        # Group files by category
+        files_by_category = {}
+        for file_info in files:
+            category = file_info['category']
+            if category not in files_by_category:
+                files_by_category[category] = []
+            files_by_category[category].append(file_info)
+        
+        html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS Log Analysis Dashboard - {mode.title()} Mode</title>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }}
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }}
+        .header h1 {{
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }}
+        .header p {{
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }}
+        .stats-bar {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+        .stat-card {{
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s;
+        }}
+        .stat-card:hover {{
+            transform: translateY(-2px);
+        }}
+        .stat-number {{
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }}
+        .stat-label {{
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }}
+        .section {{
+            background: white;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }}
+        .category-header {{
+            background: #f8f9fa;
+            padding: 20px;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #e9ecef;
+        }}
+        .file-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }}
+        .file-card {{
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s;
+        }}
+        .file-card:hover {{
+            background: #e9ecef;
+            transform: translateX(5px);
+        }}
+        .file-name {{
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }}
+        .file-info {{
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }}
+        .file-size {{
+            color: #6c757d;
+        }}
+        .file-type {{
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }}
+        .file-link {{
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }}
+        .file-link:hover {{
+            background: #5a6fd8;
+        }}
+        .info-grid {{
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }}
+        .info-item {{
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }}
+        .info-label {{
+            font-weight: bold;
+            color: #6c757d;
+            font-size: 0.9em;
+        }}
+        .info-value {{
+            color: #495057;
+            margin-top: 5px;
+            word-break: break-all;
+            overflow-wrap: break-word;
+        }}
+        .footer {{
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 NAS Log Analysis Dashboard</h1>
+            <p>{mode.title()} Mode Analysis Results</p>
+        </div>
+        
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-number">{total_files}</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{total_size_mb:.1f}</div>
+                <div class="stat-label">Total Size (MB)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{workflow_info.get('duration_seconds', 0):.1f}s</div>
+                <div class="stat-label">Processing Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{files_info.get('parsed_file', {}).get('message_count', 0)}</div>
+                <div class="stat-label">Messages Analyzed</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="category-header">📊 Analysis Summary</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Input File</div>
+                    <div class="info-value">{workflow_info.get('input_file', 'N/A')}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Output Directory</div>
+                    <div class="info-value">{workflow_info.get('output_directory', 'N/A')}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Analysis Mode</div>
+                    <div class="info-value">{mode.title()}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Generated At</div>
+                    <div class="info-value">{workflow_info.get('start_time', 'N/A')}</div>
+                </div>
+            </div>
+        </div>
+"""
+        
+        # Add sections for each category with improved filtering
+        for category, category_files in files_by_category.items():
+            # Apply filtering based on category
+            filtered_files = self._filter_files_for_category(category, category_files, mode)
+            
+            if filtered_files:  # Only show section if there are files to display
+                html += f"""
+            <div class="section">
+                <div class="category-header">📁 {category}</div>
+                <div class="file-grid">
+"""
+                
+                for file_info in filtered_files:
+                    html += f"""
+                    <div class="file-card">
+                        <div class="file-name">{file_info['name']}</div>
+                        <div class="file-info">
+                            <span class="file-size">{file_info['size_mb']:.2f} MB</span>
+                            <span class="file-type">{file_info['type']}</span>
+                        </div>
+                        <a href="{file_info['path']}" class="file-link" target="_blank">Open File</a>
+                    </div>
+"""
+                
+                html += """
+                </div>
+            </div>
+"""
+        
+        html += """
+        </div>
+        
+        <div class="footer">
+            <p>Generated by NAS Log Processing System | Enhanced with container analysis and visualizations</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        return html
     
     def _display_enhanced_results(self, output_dir: str):
         """Display enhanced analysis results."""
@@ -564,6 +924,14 @@ class UnifiedAnalysisWorkflow:
             for viz_file in files['visualization_files']:
                 print(f"   • {Path(viz_file['path']).name} ({viz_file['type'].upper()})")
             
+            # Dashboard info
+            dashboard_file = Path(output_dir) / "analysis_dashboard.html"
+            if dashboard_file.exists():
+                print(f"\n🌐 Analysis Dashboard:")
+                print(f"   • Open {dashboard_file} in your browser for a complete overview")
+                print(f"   • Navigate to all analysis files and visualizations")
+                print(f"   • Interactive file browser with categorized results")
+            
             print("\n" + "="*60)
     
     def _display_complete_results(self, output_dir: str):
@@ -600,6 +968,14 @@ class UnifiedAnalysisWorkflow:
             print(f"  📝 Messages extracted: {message_count:,}")
             print(f"  📁 Grouped files: {len(list(Path(output_dir).glob('grouped/*.csv')))}")
             print(f"  📈 Analysis files: {len(list(Path(output_dir).glob('analysis/*')))}")
+        
+        # Dashboard info
+        dashboard_file = Path(output_dir) / "analysis_dashboard.html"
+        if dashboard_file.exists():
+            print(f"\n🌐 Analysis Dashboard:")
+            print(f"   • Open {dashboard_file} in your browser for a complete overview")
+            print(f"   • Navigate to all analysis files and visualizations")
+            print(f"   • Interactive file browser with categorized results")
         
         print("\n" + "="*60)
         print("✅ Analysis workflow completed successfully!")
