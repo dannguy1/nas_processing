@@ -201,11 +201,11 @@ class UnifiedAnalysisWorkflow:
         # Load parsed data
         df = pd.read_csv(parsed_file)
         
-        # Count messages with containers (have subscription_id)
+        # Count messages with actual containers
         total_messages = len(df)
-        messages_with_containers = len(df[df['subscription_id'].notna()])
+        messages_with_containers = len(df[df['has_embedded_containers'] == True])
         
-        # Container types analysis
+        # Container types analysis based on actual data
         container_types = {
             'esm_container': len(df[df['bearer_id'].notna()]),
             'protocol_configs': len(df[df['qci'].notna()]),
@@ -213,55 +213,68 @@ class UnifiedAnalysisWorkflow:
             'bearer_id': len(df[df['bearer_id'].notna()]),
             'bearer_state': len(df[df['bearer_state'].notna()]),
             'connection_id': len(df[df['connection_id'].notna()]),
-            'vendor_specific': len(df[df['subscription_id'].notna()]),
-            'container_contents': len(df[df['subscription_id'].notna()]),
-            'protocol_lengths': len(df[df['subscription_id'].notna()]),
-            'num_records': len(df[df['subscription_id'].notna()])
+            'vendor_specific': len(df[df['has_embedded_containers'] == True]),
+            'container_contents': len(df[df['has_embedded_containers'] == True]),
+            'protocol_lengths': len(df[df['has_embedded_containers'] == True]),
+            'num_records': len(df[df['has_embedded_containers'] == True])
         }
         
-        # Protocol distribution (based on analysis)
-        protocol_distribution = {
-            'IPCP': 28,
-            'DNS Server IPv4 Address Request': 8,
-            'DNS Server IPv6 Address Request': 8,
-            'unknown': 88,
-            'IP address allocation via NAS signalling': 8,
-            'NWK Req Bearer Control indicator': 8,
-            'MSISDN Request': 8,
-            'Ipv4 Link MTU Request': 28,
-            'MS support of Local address in TFT indicator': 8,
-            'PDU Session ID': 8,
-            'QoS Rules with the length of 2 Octs support indicator': 8,
-            'DNS Server IPv6 Address': 40,
-            'DNS Server IPv4 Address': 40,
-            'MSISDN': 20
-        }
+        # Protocol distribution - analyze actual protocol data
+        protocol_distribution = {}
+        if 'protocol_container_types' in df.columns:
+            for _, row in df.iterrows():
+                if pd.notna(row.get('protocol_container_types')):
+                    try:
+                        # Handle string representation of list
+                        if isinstance(row['protocol_container_types'], str):
+                            protocols = eval(row['protocol_container_types'])
+                        else:
+                            protocols = row['protocol_container_types']
+                        
+                        for protocol in protocols:
+                            protocol_distribution[protocol] = protocol_distribution.get(protocol, 0) + 1
+                    except:
+                        pass
         
-        # Vendor container stats
-        vendor_container_stats = {
-            '65280': 44,
-            '65283': 44
-        }
+        # If no protocol data found, use empty dict
+        if not protocol_distribution:
+            protocol_distribution = {}
         
-        # QCI info
-        qci_info = {
-            'qci_value': 8
-        }
+        # Vendor container stats - analyze actual vendor data
+        vendor_container_stats = {}
+        if 'vendor_specific_count' in df.columns:
+            for _, row in df.iterrows():
+                if pd.notna(row.get('vendor_specific_count')) and row['vendor_specific_count'] > 0:
+                    # For now, use a generic vendor ID since we don't have specific vendor data
+                    vendor_container_stats['vendor_containers'] = vendor_container_stats.get('vendor_containers', 0) + row['vendor_specific_count']
         
-        # Bearer ID info
-        bearer_id_info = {
-            'bearer_id_value': 5
-        }
+        # QCI info - use actual QCI data
+        qci_info = {}
+        if 'qci' in df.columns:
+            qci_values = df[df['qci'].notna()]['qci'].unique()
+            if len(qci_values) > 0:
+                qci_info['qci_value'] = qci_values[0]  # Use first QCI value found
         
-        # Bearer state info
-        bearer_state_info = {
-            'bearer_state_value': 'ACTIVE'
-        }
+        # Bearer ID info - use actual bearer ID data
+        bearer_id_info = {}
+        if 'bearer_id' in df.columns:
+            bearer_values = df[df['bearer_id'].notna()]['bearer_id'].unique()
+            if len(bearer_values) > 0:
+                bearer_id_info['bearer_id_value'] = bearer_values[0]  # Use first bearer ID found
         
-        # Connection ID info
-        connection_id_info = {
-            'connection_id_value': 4
-        }
+        # Bearer state info - use actual bearer state data
+        bearer_state_info = {}
+        if 'bearer_state' in df.columns:
+            bearer_state_values = df[df['bearer_state'].notna()]['bearer_state'].unique()
+            if len(bearer_state_values) > 0:
+                bearer_state_info['bearer_state_value'] = bearer_state_values[0]  # Use first bearer state found
+        
+        # Connection ID info - use actual connection ID data
+        connection_id_info = {}
+        if 'connection_id' in df.columns:
+            connection_values = df[df['connection_id'].notna()]['connection_id'].unique()
+            if len(connection_values) > 0:
+                connection_id_info['connection_id_value'] = connection_values[0]  # Use first connection ID found
         
         container_analysis = {
             'container_analysis': {
@@ -275,7 +288,7 @@ class UnifiedAnalysisWorkflow:
                     'bearer_id_info': bearer_id_info,
                     'bearer_state_info': bearer_state_info,
                     'connection_id_info': connection_id_info,
-                    'container_coverage_percentage': (messages_with_containers / total_messages) * 100
+                    'container_coverage_percentage': (messages_with_containers / total_messages) * 100 if total_messages > 0 else 0
                 },
                 'details': {}
             }
@@ -916,8 +929,14 @@ class UnifiedAnalysisWorkflow:
             print(f"   • Total Messages: {container['total_messages']}")
             print(f"   • Messages with Containers: {container['messages_with_containers']}")
             print(f"   • Container Coverage: {container['container_coverage_percentage']:.1f}%")
-            print(f"   • Primary Bearer ID: {container['bearer_id_info']['bearer_id_value']}")
-            print(f"   • QCI Value: {container['qci_info']['qci_value']}")
+            if container['bearer_id_info']:
+                print(f"   • Primary Bearer ID: {container['bearer_id_info'].get('bearer_id_value', 'N/A')}")
+            else:
+                print(f"   • Primary Bearer ID: N/A")
+            if container['qci_info']:
+                print(f"   • QCI Value: {container['qci_info'].get('qci_value', 'N/A')}")
+            else:
+                print(f"   • QCI Value: N/A")
             
             # Visualization files
             print(f"\n📈 Generated Visualizations:")

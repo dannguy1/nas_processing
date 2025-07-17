@@ -115,8 +115,8 @@ class ContainerVisualizer:
         csv_data['datetime'] = pd.to_datetime(csv_data['timestamp'], 
                                             format='%Y %b %d %H:%M:%S.%f')
         
-        # Filter messages with containers (have subscription_id)
-        container_msgs = csv_data[csv_data['subscription_id'].notna()]
+        # Filter messages with actual containers
+        container_msgs = csv_data[csv_data['has_embedded_containers'] == True]
         
         if container_msgs.empty:
             logger.warning("No container messages found for timeline")
@@ -371,8 +371,8 @@ class ContainerVisualizer:
         """
         
         # Add message details with links to individual container pages
-        # Use original working logic: messages with subscription_id (which indicates containers)
-        container_msgs = csv_data[csv_data['subscription_id'].notna()]
+        # Use actual container data: messages with embedded containers
+        container_msgs = csv_data[csv_data['has_embedded_containers'] == True]
         for idx, row in container_msgs.head(20).iterrows():  # Show first 20
             container_json = row.get('embedded_containers_json', '')
             
