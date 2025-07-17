@@ -450,6 +450,21 @@ class NASParser:
         elif "LTE NAS EMM RRC Service Request" in line:
             return "State", "EMM RRC Service Request"
         
+        # Check for 5G NR messages
+        elif "NR5G NAS MM5G State" in line:
+            return "State", "MM5G State"
+        elif "NR5G NAS MM5G Service Request" in line:
+            return "State", "MM5G Service Request"
+        elif "NR5G NAS MM5G NSSAI Info" in line:
+            return "State", "MM5G NSSAI Info"
+        elif "NR5G NAS Plain Message Container" in line:
+            # Extract message type from the container
+            msg_type_match = re.search(r'msg_type = \d+.*?\((.+?)\)', line)
+            if msg_type_match:
+                return "State", msg_type_match.group(1).strip()
+            else:
+                return "State", "Plain Message Container"
+        
         # Check for security protected messages
         elif "LTE NAS EMM Security Protected" in line:
             if "Incoming" in line:
@@ -609,7 +624,7 @@ class NASParser:
         if rb_match and not record.get('rb_id'):
             record['rb_id'] = rb_match.group(1)
         
-        # QCI
+        # QCI (with extended range for 5G NR)
         qci_match = re.search(r'qci = (\d+)', line)
         if qci_match and not record.get('qci'):
             record['qci'] = qci_match.group(1)
@@ -628,6 +643,115 @@ class NASParser:
         tsc_match = re.search(r'tsc = (\d+)', line)
         if tsc_match and not record.get('tsc'):
             record['tsc'] = tsc_match.group(1)
+        
+        # 5G NR Specific Fields
+        # AMF Information
+        amf_region_match = re.search(r'AMF_Region_ID = (\d+)', line)
+        if amf_region_match and not record.get('amf_region_id'):
+            record['amf_region_id'] = amf_region_match.group(1)
+        
+        amf_set_match = re.search(r'AMF_SET_ID = (\d+)', line)
+        if amf_set_match and not record.get('amf_set_id'):
+            record['amf_set_id'] = amf_set_match.group(1)
+        
+        amf_pointer_match = re.search(r'AMF_Pointer = (\d+)', line)
+        if amf_pointer_match and not record.get('amf_pointer'):
+            record['amf_pointer'] = amf_pointer_match.group(1)
+        
+        # 5G TMSI
+        tmsi_0_match = re.search(r'_5g_tmsi\[0\] = (\d+)', line)
+        tmsi_1_match = re.search(r'_5g_tmsi\[1\] = (\d+)', line)
+        tmsi_2_match = re.search(r'_5g_tmsi\[2\] = (\d+)', line)
+        tmsi_3_match = re.search(r'_5g_tmsi\[3\] = (\d+)', line)
+        if tmsi_0_match and tmsi_1_match and tmsi_2_match and tmsi_3_match:
+            tmsi_array = f"{tmsi_0_match.group(1)},{tmsi_1_match.group(1)},{tmsi_2_match.group(1)},{tmsi_3_match.group(1)}"
+            if not record.get('fiveg_tmsi'):
+                record['fiveg_tmsi'] = tmsi_array
+        
+        # Registration Type
+        reg_type_match = re.search(r'_5gs_reg_type = (\d+).*?\((.*?)\)', line)
+        if reg_type_match and not record.get('registration_type'):
+            record['registration_type'] = f"{reg_type_match.group(1)} ({reg_type_match.group(2)})"
+        
+        # MM5G State
+        mm5g_state_match = re.search(r'MM5G State = ([A-Z_]+)', line)
+        if mm5g_state_match and not record.get('mm5g_state'):
+            record['mm5g_state'] = mm5g_state_match.group(1)
+        
+        # MM5G Substate
+        mm5g_substate_match = re.search(r'Mm5g.*Substate = ([A-Z_]+)', line)
+        if mm5g_substate_match and not record.get('mm5g_substate'):
+            record['mm5g_substate'] = mm5g_substate_match.group(1)
+        
+        # PLMN Identity
+        plmn_identity_match = re.search(r'Identity = \{ ([0-9x, ]+) \}', line)
+        if plmn_identity_match and not record.get('plmn_identity'):
+            record['plmn_identity'] = plmn_identity_match.group(1)
+        
+        # NSSAI SST
+        nssai_sst_match = re.search(r'SST = (\d+)', line)
+        if nssai_sst_match and not record.get('nssai_sst'):
+            record['nssai_sst'] = nssai_sst_match.group(1)
+        
+        # NSSAI SD
+        nssai_sd_match = re.search(r'SD.*Octets = \{ ([0-9, ]+) \}', line)
+        if nssai_sd_match and not record.get('nssai_sd'):
+            record['nssai_sd'] = nssai_sd_match.group(1)
+        
+        # 5G Security Algorithms
+        ea0_5g_match = re.search(r'EA0_5G = (\d+)', line)
+        if ea0_5g_match and not record.get('ea0_5g'):
+            record['ea0_5g'] = ea0_5g_match.group(1)
+        
+        ea1_128_5g_match = re.search(r'EA1_128_5G = (\d+)', line)
+        if ea1_128_5g_match and not record.get('ea1_128_5g'):
+            record['ea1_128_5g'] = ea1_128_5g_match.group(1)
+        
+        ea2_128_5g_match = re.search(r'EA2_128_5G = (\d+)', line)
+        if ea2_128_5g_match and not record.get('ea2_128_5g'):
+            record['ea2_128_5g'] = ea2_128_5g_match.group(1)
+        
+        ea3_128_5g_match = re.search(r'EA3_128_5G = (\d+)', line)
+        if ea3_128_5g_match and not record.get('ea3_128_5g'):
+            record['ea3_128_5g'] = ea3_128_5g_match.group(1)
+        
+        ia1_128_5g_match = re.search(r'IA1_128_5G = (\d+)', line)
+        if ia1_128_5g_match and not record.get('ia1_128_5g'):
+            record['ia1_128_5g'] = ia1_128_5g_match.group(1)
+        
+        ia2_128_5g_match = re.search(r'IA2_128_5G = (\d+)', line)
+        if ia2_128_5g_match and not record.get('ia2_128_5g'):
+            record['ia2_128_5g'] = ia2_128_5g_match.group(1)
+        
+        ia3_128_5g_match = re.search(r'IA3_128_5G = (\d+)', line)
+        if ia3_128_5g_match and not record.get('ia3_128_5g'):
+            record['ia3_128_5g'] = ia3_128_5g_match.group(1)
+        
+        # 5G Capabilities
+        fivegmm_cap_len_match = re.search(r'_5GMM_CAP_Len = (\d+)', line)
+        if fivegmm_cap_len_match and not record.get('fivegmm_cap_len'):
+            record['fivegmm_cap_len'] = fivegmm_cap_len_match.group(1)
+        
+        fivegc_cap_match = re.search(r'_5GC = (\d+)', line)
+        if fivegc_cap_match and not record.get('fivegc_cap'):
+            record['fivegc_cap'] = fivegc_cap_match.group(1)
+        
+        s1_mode_cap_match = re.search(r'S1_mode = (\d+)', line)
+        if s1_mode_cap_match and not record.get('s1_mode_cap'):
+            record['s1_mode_cap'] = s1_mode_cap_match.group(1)
+        
+        ho_attach_cap_match = re.search(r'HO_attach = (\d+)', line)
+        if ho_attach_cap_match and not record.get('ho_attach_cap'):
+            record['ho_attach_cap'] = ho_attach_cap_match.group(1)
+        
+        # Network Selection
+        net_selection_match = re.search(r'Net Selection Mode = ([A-Z_]+)', line)
+        if net_selection_match and not record.get('net_selection_mode'):
+            record['net_selection_mode'] = net_selection_match.group(1)
+        
+        req_type_match = re.search(r'Req Type = ([A-Z_]+)', line)
+        if req_type_match and not record.get('req_type'):
+            record['req_type'] = req_type_match.group(1)
         
         # Security algorithms
         eea_match = re.search(r'(EEA\d+(_128)?) = (\d+)', line)

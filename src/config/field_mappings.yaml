@@ -12,6 +12,10 @@ direction:
     - 'LTE NAS.*Plain OTA.*(Incoming|Outgoing).*Message.*--'
     - 'LTE NAS.*State'
     - 'LTE NAS.*Bearer Context.*State'
+    - 'NR5G NAS.*Plain.*Message.*Container'
+    - 'NR5G NAS.*State'
+    - 'NR5G NAS.*Service Request'
+    - 'NR5G NAS.*NSSAI Info'
   validation:
     required: true
     allowed_values: ["Incoming", "Outgoing", "State"]
@@ -23,9 +27,203 @@ message_type:
     - 'LTE NAS.*State.*--\s*(.+?)(?:\s+Msg)?$'
     - 'LTE NAS.*Bearer Context.*State.*--\s*(.+?)(?:\s+Msg)?$'
     - 'LTE NAS.*Bearer Context.*Info.*--\s*(.+?)(?:\s+Msg)?$'
+    - 'NR5G NAS.*Plain Message Container.*msg_type = \d+.*?\\((.+?)\\)'
+    - 'NR5G NAS.*State.*--\s*(.+?)(?:\s+Msg)?$'
+    - 'NR5G NAS.*Service Request'
+    - 'NR5G NAS.*NSSAI Info'
   validation:
     required: true
   description: "Type of NAS message"
+
+# 5G NR Specific Fields
+amf_region_id:
+  patterns:
+    - 'AMF_Region_ID = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "AMF Region ID"
+
+amf_set_id:
+  patterns:
+    - 'AMF_SET_ID = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "AMF Set ID"
+
+amf_pointer:
+  patterns:
+    - 'AMF_Pointer = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "AMF Pointer"
+
+fiveg_tmsi:
+  patterns:
+    - '_5g_tmsi\\[0\\] = (\\d+).*_5g_tmsi\\[1\\] = (\\d+).*_5g_tmsi\\[2\\] = (\\d+).*_5g_tmsi\\[3\\] = (\\d+)'
+  validation:
+    required: false
+  description: "5G TMSI (complete array)"
+
+registration_type:
+  patterns:
+    - '_5gs_reg_type = (\\d+).*?\\((.*?)\\)'
+  validation:
+    required: false
+  description: "5GS Registration Type"
+
+mm5g_state:
+  patterns:
+    - 'MM5G State = ([A-Z_]+)'
+  validation:
+    required: false
+  description: "MM5G State"
+
+mm5g_substate:
+  patterns:
+    - 'Mm5g.*Substate = ([A-Z_]+)'
+  validation:
+    required: false
+  description: "MM5G Substate"
+
+plmn_identity:
+  patterns:
+    - 'Identity = \\{ ([0-9x, ]+) \\}'
+  validation:
+    required: false
+  description: "PLMN Identity"
+
+nssai_sst:
+  patterns:
+    - 'SST = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "NSSAI SST"
+
+nssai_sd:
+  patterns:
+    - 'SD.*Octets = \\{ ([0-9, ]+) \\}'
+  validation:
+    required: false
+  description: "NSSAI SD"
+
+# 5G Security Algorithms
+ea0_5g:
+  patterns:
+    - 'EA0_5G = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5G Encryption Algorithm 0"
+
+ea1_128_5g:
+  patterns:
+    - 'EA1_128_5G = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5G Encryption Algorithm 1-128"
+
+ea2_128_5g:
+  patterns:
+    - 'EA2_128_5G = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5G Encryption Algorithm 2-128"
+
+ea3_128_5g:
+  patterns:
+    - 'EA3_128_5G = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5G Encryption Algorithm 3-128"
+
+ia1_128_5g:
+  patterns:
+    - 'IA1_128_5G = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5G Integrity Algorithm 1-128"
+
+ia2_128_5g:
+  patterns:
+    - 'IA2_128_5G = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5G Integrity Algorithm 2-128"
+
+ia3_128_5g:
+  patterns:
+    - 'IA3_128_5G = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5G Integrity Algorithm 3-128"
+
+# 5G Capabilities
+fivegmm_cap_len:
+  patterns:
+    - '_5GMM_CAP_Len = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5GMM Capability Length"
+
+fivegc_cap:
+  patterns:
+    - '_5GC = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "5GC Capability"
+
+s1_mode_cap:
+  patterns:
+    - 'S1_mode = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "S1 Mode Capability"
+
+ho_attach_cap:
+  patterns:
+    - 'HO_attach = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+  description: "Handover Attach Capability"
+
+# Network Selection
+net_selection_mode:
+  patterns:
+    - 'Net Selection Mode = ([A-Z_]+)'
+  validation:
+    required: false
+  description: "Network Selection Mode"
+
+req_type:
+  patterns:
+    - 'Req Type = ([A-Z_]+)'
+  validation:
+    required: false
+  description: "Request Type"
+
+# Enhanced QCI for 5G NR
+qci:
+  patterns:
+    - 'qci = (\\d+)'
+  validation:
+    required: false
+    data_type: "integer"
+    range: [1, 255]  # Extended range for 5G NR
+  description: "QoS Class Identifier"
 
 bearer_id:
   patterns:
@@ -50,15 +248,6 @@ ipv4:
     required: false
     format: "ipv4"
   description: "IPv4 address"
-
-qci:
-  patterns:
-    - 'qci = (\\d+)'
-  validation:
-    required: false
-    data_type: "integer"
-    range: [1, 9]
-  description: "QoS Class Identifier"
 
 mcc:
   patterns:
@@ -88,7 +277,7 @@ guti:
 
 mme_group_id:
   patterns:
-    - 'MME_group_id = (\\d+) \\(0x[0-9a-fA-F]+\\)'
+    - 'MME_group_id = (\\d+) \\(0x[0-9a-fA-F]+\\\\)'
   validation:
     required: false
     data_type: "integer"
@@ -96,7 +285,7 @@ mme_group_id:
 
 mme_code:
   patterns:
-    - 'MME_code = (\\d+) \\(0x[0-9a-fA-F]+\\)'
+    - 'MME_code = (\\d+) \\(0x[0-9a-fA-F]+\\\\)'
   validation:
     required: false
     data_type: "integer"
@@ -104,7 +293,7 @@ mme_code:
 
 tmsi:
   patterns:
-    - 'm_tmsi = (\\d+) \\(0x[0-9a-fA-F]+\\)'
+    - 'm_tmsi = (\\d+) \\(0x[0-9a-fA-F]+\\\\)'
   validation:
     required: false
     data_type: "integer"

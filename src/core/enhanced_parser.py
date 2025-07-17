@@ -100,6 +100,10 @@ class EnhancedNASParser(NASParser):
             message_type = record.get('message_type', '')
             message_text = self._get_message_text(record)
             
+            # Enhanced technology detection
+            technology = self._detect_technology(record, message_type, message_text)
+            enhanced_record['technology'] = technology
+            
             if message_type:
                 # Identify message using YAML definitions
                 message_info = self.message_processor.identify_message(message_text, message_type)
@@ -112,7 +116,6 @@ class EnhancedNASParser(NASParser):
                 
                 # Add enhanced information
                 enhanced_record.update({
-                    'technology': message_info.get('technology', 'Unknown'),
                     'procedure': message_info.get('procedure', ''),
                     'hex_code': message_info.get('hex_code', ''),
                     'description': message_info.get('description', ''),
@@ -129,6 +132,43 @@ class EnhancedNASParser(NASParser):
             enhanced_records.append(enhanced_record)
         
         return enhanced_records
+    
+    def _detect_technology(self, record: Dict[str, Any], message_type: str, message_text: str) -> str:
+        """Enhanced technology detection for 5G NR and LTE."""
+        # Check for explicit 5G NR indicators
+        if any(indicator in message_type.upper() for indicator in ['MM5G', 'NR5G', '5G']):
+            return '5G'
+        
+        # Check for 5G NR specific fields
+        if any(field in record for field in ['amf_region_id', 'amf_set_id', 'amf_pointer', 'fiveg_tmsi', 'mm5g_state']):
+            return '5G'
+        
+        # Check for 5G NR security algorithms
+        if any(field in record for field in ['ea0_5g', 'ea1_128_5g', 'ea2_128_5g', 'ea3_128_5g', 'ia1_128_5g', 'ia2_128_5g', 'ia3_128_5g']):
+            return '5G'
+        
+        # Check for 5G NR capabilities
+        if any(field in record for field in ['fivegmm_cap_len', 'fivegc_cap', 's1_mode_cap', 'ho_attach_cap']):
+            return '5G'
+        
+        # Check for 5G NR registration types
+        if record.get('registration_type', '').upper().find('5GS') != -1:
+            return '5G'
+        
+        # Check message text for 5G NR indicators
+        if message_text and any(indicator in message_text.upper() for indicator in ['NR5G', 'MM5G', '5G_GUTI', 'AMF_Region_ID', 'AMF_SET_ID']):
+            return '5G'
+        
+        # Check for LTE indicators
+        if any(indicator in message_type.upper() for indicator in ['LTE', 'EMM', 'ESM']):
+            return 'LTE'
+        
+        # Check for LTE specific fields
+        if any(field in record for field in ['emm_state', 'emm_sub_state', 'mme_group_id', 'mme_code']):
+            return 'LTE'
+        
+        # Default to LTE for backward compatibility
+        return 'LTE'
     
     def _get_message_text(self, record: Dict[str, Any]) -> str:
         """Get message text from record for analysis by matching timestamp and message_type (case-insensitive, ignore whitespace)."""
@@ -203,6 +243,14 @@ class EnhancedNASParser(NASParser):
         """Write enhanced records to CSV."""
         if not records:
             logger.warning("No enhanced records to write")
+            # Create a minimal CSV file with headers to prevent downstream errors
+            try:
+                with open(output_file, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.DictWriter(f, fieldnames=self.fieldnames, quoting=csv.QUOTE_ALL)
+                    writer.writeheader()
+                logger.info(f"Created empty CSV file with headers at {output_file}")
+            except Exception as e:
+                logger.error(f"Failed to create empty CSV file", error=str(e))
             return
         
         try:
@@ -468,122 +516,157 @@ class EnhancedNASParser(NASParser):
         return summary 
 
     def _extract_embedded_containers(self, message_text: str) -> Dict[str, Any]:
-        """Extract embedded container information from message text."""
+        """Extract embedded containers from message text with enhanced 5G NR support."""
         containers = {}
         
         if not message_text:
             return containers
         
-        # Extract ESM message container information - updated pattern
-        esm_container_match = re.search(r'esm_msg_container\s+eps_bearer_id_or_skip_id = (\d+) \(0x[0-9a-fA-F]+\)\s+prot_disc = (\d+) \(0x[0-9a-fA-F]+\) \((.+?)\)\s+trans_id = (\d+) \(0x[0-9a-fA-F]+\)\s+msg_type = (\d+) \(0x[0-9a-fA-F]+\) \((.+?)\)', message_text, re.DOTALL)
-        if esm_container_match:
-            containers['esm_container'] = {
-                'bearer_id': int(esm_container_match.group(1)),
-                'protocol_discriminator': int(esm_container_match.group(2)),
-                'protocol_name': esm_container_match.group(3),
-                'transaction_id': int(esm_container_match.group(4)),
-                'message_type': int(esm_container_match.group(5)),
-                'message_name': esm_container_match.group(6)
-            }
+        # Enhanced 5G NR container extraction
+        containers.update(self._extract_5g_nr_containers(message_text))
         
-        # Extract Protocol Configuration containers
-        prot_config_matches = re.findall(r'prot_or_container\[(\d+)\]\s+id = (\d+) \(0x[0-9a-fA-F]+\) \((.+?)\)', message_text)
-        if prot_config_matches:
-            containers['protocol_configs'] = []
-            for match in prot_config_matches:
-                containers['protocol_configs'].append({
-                    'index': int(match[0]),
-                    'id': int(match[1]),
-                    'name': match[2]
-                })
+        # Standard container extraction
+        containers.update(self._extract_standard_containers(message_text))
         
-        # Extract DNS Server information
-        dns_ipv4_matches = re.findall(r'DNS Server IPv4 Address.*?container_contents\[(\d+)\] = (\d+)', message_text)
-        if dns_ipv4_matches:
-            containers['dns_servers_ipv4'] = []
-            for match in dns_ipv4_matches:
-                containers['dns_servers_ipv4'].append({
-                    'index': int(match[0]),
-                    'value': int(match[1])
-                })
+        return containers
+    
+    def _extract_5g_nr_containers(self, message_text: str) -> Dict[str, Any]:
+        """Extract 5G NR specific containers."""
+        containers = {}
         
-        dns_ipv6_matches = re.findall(r'DNS Server IPv6 Address.*?addr = 0x([0-9a-fA-F]+)', message_text)
-        if dns_ipv6_matches:
-            containers['dns_servers_ipv6'] = []
-            for match in dns_ipv6_matches:
-                containers['dns_servers_ipv6'].append({
-                    'address': match
-                })
+        # Extract 5G GUTI information
+        guti_match = re.search(r'_5gs_mob_id.*?ident_type = (\d+).*?\(([^)]+)\)', message_text, re.DOTALL)
+        if guti_match:
+            containers['5g_guti_type'] = guti_match.group(1)
+            containers['5g_guti_description'] = guti_match.group(2)
         
-        # Extract MTU information
-        mtu_match = re.search(r'MTU.*?= (\d+)', message_text)
-        if mtu_match:
-            containers['mtu'] = int(mtu_match.group(1))
+        # Extract MCC/MNC breakdown
+        mcc_matches = re.findall(r'mcc_(\d+) = (\d+)', message_text)
+        if mcc_matches:
+            mcc_parts = [match[1] for match in sorted(mcc_matches, key=lambda x: int(x[0]))]
+            containers['mcc_breakdown'] = mcc_parts
+            containers['mcc_complete'] = ''.join(mcc_parts)
         
-        # Extract MSISDN information
-        msisdn_match = re.search(r'MSISDN.*?= (.+)', message_text)
-        if msisdn_match:
-            containers['msisdn'] = msisdn_match.group(1)
+        mnc_matches = re.findall(r'mnc_(\d+) = (\d+)', message_text)
+        if mnc_matches:
+            mnc_parts = [match[1] for match in sorted(mnc_matches, key=lambda x: int(x[0]))]
+            containers['mnc_breakdown'] = mnc_parts
+            containers['mnc_complete'] = ''.join(mnc_parts)
         
-        # Extract APN information
-        apn_match = re.search(r'APN.*?= (.+)', message_text)
-        if apn_match:
-            containers['apn'] = apn_match.group(1)
+        # Extract AMF information
+        amf_region_match = re.search(r'AMF_Region_ID = (\d+)', message_text)
+        if amf_region_match:
+            containers['amf_region_id'] = amf_region_match.group(1)
         
-        # Extract QoS information
+        amf_set_match = re.search(r'AMF_SET_ID = (\d+)', message_text)
+        if amf_set_match:
+            containers['amf_set_id'] = amf_set_match.group(1)
+        
+        amf_pointer_match = re.search(r'AMF_Pointer = (\d+)', message_text)
+        if amf_pointer_match:
+            containers['amf_pointer'] = amf_pointer_match.group(1)
+        
+        # Extract 5G TMSI array
+        tmsi_matches = re.findall(r'_5g_tmsi\[(\d+)\] = (\d+)', message_text)
+        if tmsi_matches:
+            tmsi_array = [match[1] for match in sorted(tmsi_matches, key=lambda x: int(x[0]))]
+            containers['5g_tmsi_array'] = tmsi_array
+            containers['5g_tmsi_hex'] = ''.join([f'{int(x):02x}' for x in tmsi_array])
+        
+        # Extract registration type
+        reg_type_match = re.search(r'_5gs_reg_type = (\d+).*?\(([^)]+)\)', message_text)
+        if reg_type_match:
+            containers['registration_type_code'] = reg_type_match.group(1)
+            containers['registration_type_desc'] = reg_type_match.group(2)
+        
+        # Extract 5G security algorithms
+        ea_algorithms = []
+        for i in range(8):
+            ea_match = re.search(f'EA{i}_5G = (\\d+)', message_text)
+            if ea_match and ea_match.group(1) == '1':
+                ea_algorithms.append(f'EA{i}_5G')
+        if ea_algorithms:
+            containers['5g_encryption_algorithms'] = ea_algorithms
+        
+        ia_algorithms = []
+        for i in range(8):
+            ia_match = re.search(f'IA{i}_5G = (\\d+)', message_text)
+            if ia_match and ia_match.group(1) == '1':
+                ia_algorithms.append(f'IA{i}_5G')
+        if ia_algorithms:
+            containers['5g_integrity_algorithms'] = ia_algorithms
+        
+        # Extract 5G capabilities
+        capabilities = {}
+        cap_fields = ['_5GC', '_5GIPHC_CP_CIoT', 'N3_data', '_5G_CP_CIoT', 'restrictEC', 
+                     'Lpp', 'HO_attach', 'S1_mode', 'RACS', 'NSSAA', '_5GLCS', 
+                     'V2XCNPC5', 'V2XCEPC5', 'V2X', '_5G_UP_CIoT', '_5GSR_vcc']
+        
+        for field in cap_fields:
+            cap_match = re.search(f'{field} = (\\d+)', message_text)
+            if cap_match:
+                capabilities[field] = cap_match.group(1) == '1'
+        
+        if capabilities:
+            containers['5g_capabilities'] = capabilities
+        
+        # Extract NSSAI information
+        nssai_match = re.search(r'num_nssai = (\d+)', message_text)
+        if nssai_match:
+            containers['nssai_count'] = nssai_match.group(1)
+        
+        sst_match = re.search(r's_nssai_val\[0\] = (\d+)', message_text)
+        if sst_match:
+            containers['nssai_sst'] = sst_match.group(1)
+        
+        # Extract TAC information
+        tac_match = re.search(r'tac = (\d+)', message_text)
+        if tac_match:
+            containers['tac_value'] = tac_match.group(1)
+        
+        return containers
+    
+    def _extract_standard_containers(self, message_text: str) -> Dict[str, Any]:
+        """Extract standard LTE containers."""
+        containers = {}
+        
+        # Extract bearer information
+        bearer_match = re.search(r'Bearer ID = (\d+)', message_text)
+        if bearer_match:
+            containers['bearer_id'] = bearer_match.group(1)
+        
+        # Extract QCI
         qci_match = re.search(r'qci = (\d+)', message_text)
         if qci_match:
-            containers['qci'] = int(qci_match.group(1))
+            containers['qci'] = qci_match.group(1)
         
-        # Extract Bearer information
-        bearer_id_match = re.search(r'Bearer ID = (\d+)', message_text)
-        if bearer_id_match:
-            containers['bearer_id'] = int(bearer_id_match.group(1))
+        # Extract APN
+        apn_match = re.search(r'acc_pt_name_val\[(\d+)\] = \d+ \([^)]+\) \(([^)]+)\)', message_text)
+        if apn_match:
+            containers['apn_index'] = apn_match.group(1)
+            containers['apn_name'] = apn_match.group(2)
         
-        bearer_state_match = re.search(r'Bearer State = (.+)', message_text)
-        if bearer_state_match:
-            containers['bearer_state'] = bearer_state_match.group(1)
+        # Extract IP address
+        ip_match = re.search(r'ipv4_addr = \d+ \(0x[0-9a-fA-F]+\) \(([ 0-9\.]+)\)', message_text)
+        if ip_match:
+            containers['ipv4_address'] = ip_match.group(1)
         
-        # Extract Connection information
-        connection_id_match = re.search(r'Connection ID = (\d+)', message_text)
-        if connection_id_match:
-            containers['connection_id'] = int(connection_id_match.group(1))
+        # Extract security algorithms
+        eea_algorithms = []
+        for i in range(8):
+            eea_match = re.search(f'EEA{i}(_128)? = (\\d+)', message_text)
+            if eea_match and eea_match.group(2) == '1':
+                eea_algorithms.append(f'EEA{i}')
+        if eea_algorithms:
+            containers['eea_algorithms'] = eea_algorithms
         
-        # Extract Vendor-specific containers
-        vendor_matches = re.findall(r'id = (\d+) \(0x[0-9a-fA-F]+\) \(unknown\)', message_text)
-        if vendor_matches:
-            containers['vendor_specific'] = []
-            for match in vendor_matches:
-                containers['vendor_specific'].append({
-                    'id': int(match)
-                })
-        
-        # Extract Container contents
-        container_contents_matches = re.findall(r'container_contents\[(\d+)\] = (\d+)', message_text)
-        if container_contents_matches:
-            containers['container_contents'] = []
-            for match in container_contents_matches:
-                containers['container_contents'].append({
-                    'index': int(match[0]),
-                    'value': int(match[1])
-                })
-        
-        # Extract Protocol lengths
-        prot_len_matches = re.findall(r'prot_len = (\d+)', message_text)
-        if prot_len_matches:
-            containers['protocol_lengths'] = [int(x) for x in prot_len_matches]
-        
-        # Extract Number of records
-        num_recs_match = re.search(r'num_recs = (\d+)', message_text)
-        if num_recs_match:
-            containers['num_records'] = int(num_recs_match.group(1))
-        
-        # Extract Security information
-        security_matches = re.findall(r'(eea|eia|uea).*?= (.+)', message_text)
-        if security_matches:
-            containers['security_algorithms'] = {}
-            for match in security_matches:
-                containers['security_algorithms'][match[0]] = match[1]
+        eia_algorithms = []
+        for i in range(8):
+            eia_match = re.search(f'EIA{i}(_128)? = (\\d+)', message_text)
+            if eia_match and eia_match.group(2) == '1':
+                eia_algorithms.append(f'EIA{i}')
+        if eia_algorithms:
+            containers['eia_algorithms'] = eia_algorithms
         
         return containers
     
